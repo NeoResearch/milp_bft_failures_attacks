@@ -1,0 +1,1 @@
+glpsol --model arq.mod --data arq.dat --wcpxlp arq.lp --check

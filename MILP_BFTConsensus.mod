@@ -1,11 +1,16 @@
-/* consensus replica $i$ from set of replicas R. $R^{BYZ}$ is byzantine set. $R^{OK}$ is non-byzantine set. $R = R^{OK} \cup R^{BYZ}$, such that $R^{OK} \cap R^{BYZ} = \emptyset$. */
-set R_OK;
+/* consensus replica $i$ from set of replicas R. 
+$R^{BYZ}$ is byzantine set.
+$R^{OK}$ is non-byzantine set. 
+$R = R^{OK} \cup R^{BYZ}$, 
+such that $R^{OK} \cap R^{BYZ} = \emptyset$. */
+
 set R_BYZ;
+set R_OK;
 set R = R_OK union R_BYZ;
 
 param f; /* number of faulty/Byzantine replicas. */
 param N; /* total number of replicas. $N = |R| = |R^{OK}| + |R^{BYZ}| = 3f + 1$. */
-param M; /* safety level. $M = 2f + 1$. */
+param M = N - f; /* safety level. $M = 2f + 1$. */
 
 
 /* block $b$ from set of possible proposed blocks $B$ (may be understood as block hash).  $B = \{b_0, b_1, b_2, \cdots \}$. */
