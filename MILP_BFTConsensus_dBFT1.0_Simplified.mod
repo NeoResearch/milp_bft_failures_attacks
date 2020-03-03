@@ -19,7 +19,7 @@ set V := 1..N;
 param tMax;
 set T := 1..tMax;
 
-param BigM;
+#param BigM;
 
 /* ================== */
 /* {DECISION VARIABLES */

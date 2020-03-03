@@ -1,5 +1,5 @@
-glpsol --model MILP_BFTConsensus_II.mod --data MILP_BFTConsensus_II_Data_I.dat --wcpxlp arq.lp --check
-glpsol --model MILP_BFTConsensus_II.mod --data MILP_BFTConsensus_II_Data_II.dat --wcpxlp arq2.lp --check
+glpsol --model MILP_BFTConsensus_dBFT1.0_Simplified.mod --data MILP_BFTConsensus_II_Data_I.dat --wcpxlp arq.lp --check
+glpsol --model MILP_BFTConsensus_dBFT1.0_Simplified.mod --data MILP_BFTConsensus_II_Data_II.dat --wcpxlp arq2.lp --check
 
 cplex
 r arq.lp
