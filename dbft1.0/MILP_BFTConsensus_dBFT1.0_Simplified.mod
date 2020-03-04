@@ -22,8 +22,11 @@ var primary{R,V}, binary;
 var SendPrepReq{T,R,V}, binary;
 var SendPrepResp{T,R,V}, binary;
 var SendCV{T,R,V}, binary;
+/* RecvPrepReq{14,1,2,3} sinalizes that the node 1 has received a prepere_request from the node 2 during the view 3  */
 var RecvPrepReq{T,R,R,V}, binary;
+/* RecvPrepResp{18,4,5,3} sinalizes that the node 4 has received a prepere_response from the node 5 during the view 3  */
 var RecvPrepResp{T,R,R,V}, binary;
+/* RecvCV{18,1,3,3} sinalizes that the node 1 has received a ChangeView from the node 3 during the view 3  */
 var RecvCV{T,R,R,V}, binary;
 var BlockRelay{T,R,V}, binary;
 /* DECISION VARIABLES} */
