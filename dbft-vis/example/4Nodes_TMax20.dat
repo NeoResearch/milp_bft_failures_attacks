@@ -1,0 +1,6 @@
+data;
+param f := 1;
+param N := 4;
+param M := 3;
+param tMax := 10;
+# param BigM := 100;
