@@ -2,5 +2,11 @@ data;
 param f := 2;
 param N := 7;
 param M := 5;
-param tMax := 20;
-# param BigM := 20;
+param tMax := 6;
+# It was noticed that for tMax = 5 not feasible solution
+# T1 - NULL
+# T2 - SEND PREPREQ
+# T3 - RECEIVED PREPREQ
+# T4 - SEND PREPRESPONSE
+# T5 - RECEIVED PREPRESPONSE
+# T6 - RELAYED BLOCK

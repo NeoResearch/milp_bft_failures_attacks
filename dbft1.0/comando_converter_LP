@@ -5,4 +5,5 @@ glpsol --model MILP_BFTConsensus_dBFT1.0_Simplified.mod --data 10Nodes_TMax30.da
 cplex
 r arq.lp
 o
-w sol.sol
+w soln4.sol
+w soln7.sol
