@@ -73,8 +73,8 @@ prepReqReceivedSendByJ{t in T, i in R, j in R, v in V:j!=i}: RecvPrepReq[t,i,j,v
 prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepReq[t,i,j,v] <= 1;
 # If we consider R_OK then N blocks are produced - Modify those 2 constraints below for more realistic Byzantine behavior
 # sendPrepReqOnlyIfBlockNotRelayed and sendPrepReqOnlyIfViewBeforeWasAccomplished
-sendPrepReqOnlyIfBlockNotRelayed{i in R, v in V: v>1}: sum{t in T} SendPrepReq[t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i, v2]);
-sendPrepReqOnlyIfViewBeforeWasAccomplished{i in R, v in V: v>1}: sum{t in T} SendPrepReq[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+sendPrepReqOnlyIfBlockNotRelayed{i in R_OK, v in V: v>1}: sum{t in T} SendPrepReq[t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i, v2]);
+sendPrepReqOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendPrepReq[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 
 /* Prepare response constraints */
 prepRespQuicklySendIfHonest{t in T, i in R_OK, v in V:t>1}: SendPrepResp[t,i,v] >= sum{j in R} RecvPrepReq[t-1,i,j,v];
@@ -94,6 +94,8 @@ sendCommitOnlyOnce{i in R, v in V}: sum{t in T} SendCommit[t,i,v] <= 1;
 commitReceivedWhenSelfSended{t in T, i in R, v in V: t>1}: RecvCommit[t,i,i,v] = SendCommit[t,i,v];
 commitReceivedSendByJ{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCommit[t,i,j,v] <= sum{t2 in T: t2<t} SendCommit[t2,j,v];
 receivedCommitOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCommit[t,i,j,v] <= 1;
+# If we consider R_OK then N blocks are produced - Modify those 3 constraints below for more realistic Byzantine behavior
+# sendCommitOnlyIfChangeViewNotSent and sendCommitOnlyIfViewBeforeWasAccomplished and sendCommitOnlyIfBlockNotRelayed
 sendCommitOnlyIfChangeViewNotSent{i in R_OK, v in V}: sum{t in T} SendCommit[t,i,v] <= (1 - sum{t in T} SendCV[t, i, v]);
 sendCommitOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendCommit[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 sendCommitOnlyIfBlockNotRelayed{i in R_OK, v in V: v>1}: sum{t in T} SendCommit[t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i, v2]);

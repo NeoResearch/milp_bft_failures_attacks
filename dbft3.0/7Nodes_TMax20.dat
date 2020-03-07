@@ -2,7 +2,7 @@ data;
 param f := 2;
 param N := 7;
 param M := 5;
-param tMax := 8;
+param tMax := 20;
 # It was noticed that for tMax = 5 not feasible solution
 # T1 - NULL
 # T2 - SEND PREPREQ

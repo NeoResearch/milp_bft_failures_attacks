@@ -1,0 +1,10 @@
+glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 4Nodes_TMax20.dat --wcpxlp n4.lp --check
+glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 7Nodes_TMax20.dat --wcpxlp n7.lp --check
+glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 10Nodes_TMax30.dat --wcpxlp n10.lp --check
+
+
+cplex
+r arq.lp
+o
+w soln4.sol
+w soln7.sol
