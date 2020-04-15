@@ -8,7 +8,7 @@ glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 7Nodes_TMax20
 glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 10Nodes_TMax30.dat --wcpxlp n10.lp --check
 
 cplex
-r arq.lp
+r n4.lp
 o
 w soln4.sol
 w soln7.sol

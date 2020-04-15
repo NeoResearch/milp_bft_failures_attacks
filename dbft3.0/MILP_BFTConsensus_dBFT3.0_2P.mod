@@ -77,6 +77,7 @@ singlePrimary1EveryView{v in V}: sum{i in R} Primary[1,i,v] <= 1;
 primary1OnlyOnce{i in R}: sum{v in V} Primary[1,i,v] <= 1;
 primary2OnlyOnce{i in R}: sum{v in V} Primary[2,i,v] <= 1;
 primary2OnlyFirstView{i in R}: Primary[2,i,1] = 1;
+/* If backup can not help on the first view the consensus should follow its normal flow */
 primary20ForOtherViews{i in R}: sum{v in V: v>1} Primary[2,i,v] = 0;
 
 prepReqOnlyOnce{p in P, i in R, v in V}: sum{t in T} SendPrepReq[p,t,i,v] <= Primary[p,i,v];
@@ -85,20 +86,20 @@ prepReqReceivedSendByJ{p in P,t in T, i in R, j in R, v in V:j!=i}: RecvPrepReq[
 prepReqReceivedOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvPrepReq[p,t,i,j,v] <= 1;
 # If we consider R_OK then N blocks are produced - Modify those 2 constraints below for more realistic Byzantine behavior
 # sendPrepReqOnlyIfBlockNotRelayed and sendPrepReqOnlyIfViewBeforeWasAccomplished
-sendPrepReqOnlyIfBlockNotRelayed{p in P,i in R, v in V: v>1}: sum{t in T} SendPrepReq[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
+sendPrepReqOnlyIfBlockNotRelayedInPastView{p in P,i in R, v in V: v>1}: sum{t in T} SendPrepReq[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t,i,v2]);
 sendPrepReqOnlyIfViewBeforeWasAccomplished{p in P,i in R, v in V: v>1}: sum{t in T} SendPrepReq[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 
 /* Prepare response constraints */
-prepRespQuicklySendIfHonest{p in P, t in T, i in R_OK, v in V:t>1}: SendPrepResp[p,t,i,v] >= sum{j in R} RecvPrepReq[p,t-1,i,j,v];
+# prepRespQuicklySendIfHonest{p in P, t in T, i in R_OK, v in V:t>1}: SendPrepResp[p,t,i,v] >= sum{j in R} RecvPrepReq[p,t-1,i,j,v];
 prepRespSendOrNotIfYouAreByzantine{p in P, t in T, i in R, v in V: t>1}: SendPrepResp[p,t,i,v] <= sum{t2 in T:t2<t} sum{j in R} RecvPrepReq[p,t2,i,j,v];
 
 # This is the trick - Most hard constraint and damage detected until now
-sendPrepResponseOnlyOnceForNonByz{i in R_OK, v in V}: sum{t in T} sum{p in P} SendPrepResp[p,t,i,v] <= 1;
+sendPrepResponseOnlyOnceForNonByz{i in R, v in V}: sum{t in T} sum{p in P} SendPrepResp[p,t,i,v] <= 1;
 sendPrepResponseOnlyOnceForAll{p in P, i in R, v in V}: sum{t in T} SendPrepResp[p,t,i,v] <= 1;
-
 
 prepRespReceivedWhenSelfSended{p in P,t in T, i in R, v in V: t>1}: RecvPrepResp[p,t,i,i,v] = SendPrepResp[p,t,i,v];
 prepRespReceivedSendByJ{p in P,t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepResp[p,t,i,j,v] <= sum{t2 in T: t2<t} SendPrepResp[p,t2,j,v];
+receivedPrepResponseOnlyOnceForAnyPrimary{i in R_OK, j in R, v in V}: sum{t in T} sum{p in P} RecvPrepResp[p,t,i,j,v] <= 1;
 receivedPrepResponseOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvPrepResp[p,t,i,j,v] <= 1;
 # If we consider R_OK then N blocks are produced - Modify those 2 constraints below for more realistic Byzantine behavior
 # sendPrepResponseOnlyIfBlockNotRelayed and sendPrepResponseOnlyIfViewBeforeWasAccomplished
