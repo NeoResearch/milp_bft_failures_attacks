@@ -43,7 +43,7 @@ var RecvCV{T,R,R,V}, binary;
 /* ==================== */
 /* {AUXILIARY VARIABLES */
 var totalBlockRelayed;
-var lastRelayedBlock, integer;
+var lastRelayedBlock, integer, >= 0;
 var blockRelayed{P,V}, binary;
 var prepReqSendPerNodeAndView{R,V}, integer, >= 0;
 var prepRespSendPerNodeAndView{R,V}, integer, >= 0;
@@ -76,9 +76,9 @@ initializeBlockRelay{p in P,i in R, v in V}: BlockRelay[p,1, i, v] = 0;
 singlePrimary1EveryView{v in V}: sum{i in R} Primary[1,i,v] <= 1;
 primary1OnlyOnce{i in R}: sum{v in V} Primary[1,i,v] <= 1;
 primary2OnlyOnce{i in R}: sum{v in V} Primary[2,i,v] <= 1;
-primary2OnlyFirstView{i in R}: Primary[2,i,1] = 1;
 /* If backup can not help on the first view the consensus should follow its normal flow */
-primary20ForOtherViews{i in R}: sum{v in V: v>1} Primary[2,i,v] = 0;
+primary2OnlyFirstView: sum{i in R} Primary[2,i,1] <= 1;
+primary20ForOtherViews: sum{v in V: v>1} sum{i in R} Primary[2,i,v] = 0;
 
 prepReqOnlyOnce{p in P, i in R, v in V}: sum{t in T} SendPrepReq[p,t,i,v] <= Primary[p,i,v];
 prepReqReceivedWhenSelfSended{p in P,t in T, i in R, v in V}: RecvPrepReq[p,t,i,i,v] = SendPrepReq[p,t,i,v];
@@ -129,9 +129,9 @@ commitReceivedSendByJ{p in P,t in T, i in R, j in R, v in V: t>1 and j!=i}: Recv
 receivedCommitOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvCommit[p,t,i,j,v] <= 1;
 # If we consider R_OK then N blocks are produced - Modify those 3 constraints below for more realistic Byzantine behavior
 # sendCommitOnlyIfChangeViewNotSent and sendCommitOnlyIfViewBeforeWasAccomplished and sendCommitOnlyIfBlockNotRelayed
-sendCommitOnlyIfChangeViewNotSent{p in P,i in R, v in V}: sum{t in T} SendCommit[p,t,i,v] <= (1 - sum{t in T} SendCV[t, i, v]);
-sendCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R, v in V: v>1}: sum{t in T} SendCommit[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
-sendCommitOnlyIfBlockNotRelayed{p in P,i in R, v in V: v>1}: sum{t in T} SendCommit[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
+sendCommitOnlyIfChangeViewNotSent{p in P,i in R_OK, v in V}: sum{t in T} SendCommit[p,t,i,v] <= (1 - sum{t in T} SendCV[t, i, v]);
+sendCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendCommit[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+sendCommitOnlyIfBlockNotRelayed{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendCommit[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
 
 /* Block relay constraints */
 blockRelayIfEnoughPrepResp{p in P, t in T, i in R, v in V: t>1}: BlockRelay[p,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvCommit[p,t2,i,j,v])/M;
@@ -152,8 +152,8 @@ nextPrimaryOnlyIfPreviousPrimary{p in P, i in R, v in V: v>1}: Primary[p,i,v] <=
 # Even for Byzantine node, if we consider R_OK problem become more complex. Thus, even byzantine will not cheat if relayed
 # All 3 constraints below could be R_OK for more realistic scenario
 # sendCVIfNonByzAndBlockNotRelayed, sendCVOnlyIfViewBeforeWasAccomplished and  nextPrimaryOnlyIfBlockNotRelayed
-sendCVIfNonByzAndBlockNotRelayed{t in T, i in R, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<t} sum{p in P} BlockRelay[p,t2,i,v];
-sendCVOnlyIfViewBeforeWasAccomplished{i in R, v in V: v>1}: sum{t in T} SendCV[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+sendCVIfNonByzAndBlockNotRelayed{t in T, i in R_OK, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<t} sum{p in P} BlockRelay[p,t2,i,v];
+sendCVOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 # Blocks relayed by other nodes can delay. In this sense, primary can start its tasks.
 # That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])
 nextPrimaryOnlyIfBlockNotRelayed{p in P, i in R, v in V: v>1}: Primary[p,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} sum{p2 in P} BlockRelay[p2,t, i,v2]);
@@ -165,13 +165,14 @@ calcPrepReqSendEveryNodeAndView{i in R, v in V}: prepReqSendPerNodeAndView[i,v] 
 calcPrepRespSendEveryNodeAndView{i in R, v in V}: prepRespSendPerNodeAndView[i,v] = sum{t in T} sum{p in P} SendPrepResp[p,t,i,v]*t;
 calcCommitSendEveryNodeAndView{i in R, v in V}: commitSendPerNodeAndView[i,v] = sum{t in T} sum{p in P} SendCommit[p,t,i,v]*t;
 calcCVSendEveryNodeAndView{i in R, v in V}: changeViewSendPerNodeAndView[i,v] = sum{t in T} SendCV[t,i,v]*t;
-calcBlockRelayEveryNodeAndView{i in R, v in V}: blockRelayPerNodeAndView[i,v] = sum{t in T} sum{p in P} BlockRelay[p,t,i,v];
+calcBlockRelayEveryNodeAndView{i in R, v in V}: blockRelayPerNodeAndView[i,v] = sum{t in T} sum{p in P} BlockRelay[p,t,i,v]*t;
 calcPrepReqEveryNodeAndView{i in R, v in V}: prepReqRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} sum{p in P} RecvPrepReq[p,t,i,j,v]);
 calcPrepResponseEveryNodeAndView{i in R, v in V}: prepRespRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} sum{p in P} RecvPrepResp[p,t,i,j,v]);
 calcCommitEveryNodeAndView{i in R, v in V}: commitRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} sum{p in P} RecvCommit[p,t,i,j,v]);
 calcChangeViewEveryNodeAndView{i in R, v in V}: changeViewRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCV[t,i,j,v]);
-#calcLastRelayedBlock{t in T, i in R, v in V}: lastRelayedBlock <= ((v-1)*tMax*BlockRelay[p,t,i,v] + BlockRelay[p,t,i,v]*t) * -1;
+calcLastRelayedBlock{p in P, t in T, i in R, v in V}: lastRelayedBlock >= ((v-1)*tMax*BlockRelay[p,t,i,v] + BlockRelay[p,t,i,v]*t);
 
-maximize obj: totalBlockRelayed;
-#maximize obj: totalBlockRelayed * 100 + lastRelayedBlock;
-#maximize obj: totalBlockRelayed * 100 + lastRelayedBlock +  sum{i in R} sum{v in V} changeViewRecvPerNodeAndView[i,v];
+#forcetotalBlockRelayed: totalBlockRelayed >= 2;
+
+#maximize obj: totalBlockRelayed;
+maximize obj: totalBlockRelayed * 1000 + lastRelayedBlock*-1;

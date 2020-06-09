@@ -1,7 +1,7 @@
 data;
-param f := 2;
-param N := 7;
-param M := 5;
+param f := 3;
+param N := 10;
+param M := 7;
 param tMax := 30;
 # It was noticed that for tMax = 5 not feasible solution
 # T1 - NULL

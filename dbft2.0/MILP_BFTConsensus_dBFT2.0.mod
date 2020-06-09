@@ -37,7 +37,7 @@ var BlockRelay{T,R,V}, binary;
 /* ==================== */
 /* {AUXILIARY VARIABLES */
 var totalBlockRelayed;
-var lastRelayedBlock, integer;
+var lastRelayedBlock, integer, >= 0;
 var blockRelayed{V}, binary;
 var prepReqSendPerNodeAndView{R,V}, integer, >= 0;
 var prepRespSendPerNodeAndView{R,V}, integer, >= 0;
@@ -120,6 +120,8 @@ sendCVOnlyIfViewBeforeWasAccomplished{i in R, v in V: v>1}: sum{t in T} SendCV[t
 # Blocks relayed by other nodes can delay. In this sense, primary can start its tasks.
 # That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])
 nextPrimaryOnlyIfBlockNotRelayed{i in R, v in V: v>1}: primary[i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2]);
+# Only send CV if commit not sent
+sendCVOnlyIfCommitNotSent{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= (1 - sum{t in T} SendCommit[t, i, v]);
 
 /* Calculation of auxiliary variables */
 calcIfBlockRelayedOnView{v in V}: blockRelayed[v] <= sum{t in T} sum{i in R} BlockRelay[t, i, v];
@@ -133,7 +135,7 @@ calcPrepReqEveryNodeAndView{i in R, v in V}: prepReqRecvPerNodeAndView[i,v] = (s
 calcPrepResponseEveryNodeAndView{i in R, v in V}: prepRespRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvPrepResp[t,i,j,v]);
 calcCommitEveryNodeAndView{i in R, v in V}: commitRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCommit[t,i,j,v]);
 calcChangeViewEveryNodeAndView{i in R, v in V}: changeViewRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCV[t,i,j,v]);
-calcLastRelayedBlock{t in T, i in R, v in V}: lastRelayedBlock <= ((v-1)*tMax*BlockRelay[t,i,v] + BlockRelay[t,i,v]*t) * -1;
+calcLastRelayedBlock{t in T, i in R, v in V}: lastRelayedBlock <= ((v-1)*tMax*BlockRelay[t,i,v] + BlockRelay[t,i,v]*t);
 
 maximize obj: totalBlockRelayed;
 #maximize obj: totalBlockRelayed * 100 + lastRelayedBlock;
