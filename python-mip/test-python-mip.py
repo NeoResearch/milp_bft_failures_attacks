@@ -16,7 +16,7 @@ print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_ro
 #m.read("testToWrite.sol")
 print('validating mipstart {}'.format(m.validate_mip_start()))
 
-status = m.optimize(max_seconds=200)
+status = m.optimize(max_seconds=600)
 if status == OptimizationStatus.OPTIMAL:
     print('optimal solution cost {} found'.format(m.objective_value))
 elif status == OptimizationStatus.FEASIBLE:

@@ -74,8 +74,7 @@ initializeBlockRelay{p in P,i in R, v in V}: BlockRelay[p,1, i, v] = 0;
 
 /* Prepare request constraints */
 singlePrimary1EveryView{v in V}: sum{i in R} Primary[1,i,v] <= 1;
-primary1OnlyOnce{i in R}: sum{v in V} Primary[1,i,v] <= 1;
-primary2OnlyOnce{i in R}: sum{v in V} Primary[2,i,v] <= 1;
+primaryOnlyOnce{p in P, i in R}: sum{v in V} Primary[p,i,v] <= 1;
 /* If backup can not help on the first view the consensus should follow its normal flow */
 primary2OnlyFirstView: sum{i in R} Primary[2,i,1] <= 1;
 primary20ForOtherViews: sum{v in V: v>1} sum{i in R} Primary[2,i,v] = 0;
@@ -148,9 +147,9 @@ blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} sum{p in P} Bl
 #blockRelayLimitForAll{p in P, i in R}: sum{t in T} sum{v in V} BlockRelay[p,t,i,v] <= 1;
 
 /* Change view constraints */
-sendCVOnlyOnce{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
+sendCVOnlyOncePerView{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
 changeViewReceivedWhenSelfSended{t in T, i in R, v in V: t>1}: RecvCV[t,i,i,v] = SendCV[t,i,v];
-receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] = sum{t2 in T: t2<t} SendCV[t2,j,v];
+receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] <= sum{t2 in T: t2<t} SendCV[t2,j,v];
 receivedChangeViewOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
 nextPrimaryOnlyIfEnoughChangeView{p in P, i in R, v in V: v>1}: Primary[p,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 # Next primary only if all changeviews previous existed and were transmitted to node i
@@ -158,7 +157,7 @@ nextPrimaryOnlyIfPreviousPrimary{p in P, i in R, v in V: v>1}: Primary[p,i,v] <=
 # Even for Byzantine node, if we consider R_OK problem become more complex. Thus, even byzantine will not cheat if relayed
 # All 3 constraints below could be R_OK for more realistic scenario
 # sendCVIfNonByzAndBlockNotRelayed, sendCVOnlyIfViewBeforeWasAccomplished and  nextPrimaryOnlyIfBlockNotRelayed
-sendCVIfNonByzAndBlockNotRelayed{t in T, i in R_OK, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<t} sum{p in P} BlockRelay[p,t2,i,v];
+sendCVIfNonByzAndBlockNotRelayed{t in T, i in R_OK, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<=t} sum{p in P} BlockRelay[p,t2,i,v];
 sendCVOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 # Blocks relayed by other nodes can delay. In this sense, primary can start its tasks.
 # That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])

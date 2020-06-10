@@ -108,9 +108,9 @@ blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
 
 /* Change view constraints */
-sendCVOnlyOnce{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
+sendCVOnlyOncePerView{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
 changeViewReceivedWhenSelfSended{t in T, i in R, v in V: t>1}: RecvCV[t,i,i,v] = SendCV[t,i,v];
-receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] = sum{t2 in T: t2<t} SendCV[t2,j,v];
+receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] <= sum{t2 in T: t2<t} SendCV[t2,j,v];
 receivedChangeViewOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
 nextPrimaryOnlyIfEnoughChangeView{i in R, v in V: v>1}: primary[i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 # Next primary only if all changeviews previous existed and were transmitted to node i
@@ -118,7 +118,7 @@ nextPrimaryOnlyIfPreviousPrimary{i in R, v in V: v>1}: primary[i,v] <= sum{j in 
 # Even for Byzantine node, if we consider R_OK problem become more complex. Thus, even byzantine will not cheat if relayed
 # All 3 constraints below could be R_OK for more realistic scenario
 # sendCVIfNonByzAndBlockNotRelayed, sendCVOnlyIfViewBeforeWasAccomplished and  nextPrimaryOnlyIfBlockNotRelayed
-sendCVIfNonByzAndBlockNotRelayed{t in T, i in R_OK, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<t} BlockRelay[t2,i,v];
+sendCVIfNonByzAndBlockNotRelayed{t in T, i in R_OK, v in V}: SendCV[t,i,v] <= 1 - sum{t2 in T:t2<=t} BlockRelay[t2,i,v];
 sendCVOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 # Blocks relayed by other nodes can delay. In this sense, primary can start its tasks.
 # That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])
