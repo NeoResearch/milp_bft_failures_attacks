@@ -3,11 +3,11 @@ param f := 2;
 param N := 7;
 param M := 5;
 param tMax := 30;
-# It was noticed that for tMax = 5 not feasible solution
+# 
 # T1 - NULL
 # T2 - SEND PREPREQ
 # T3 - RECEIVED PREPREQ
 # T4 - SEND PREPRESPONSE
 # T5 - RECEIVED M PREPRESPONSE
-# T7 - SEND COMMIT
-# T8 - RECEIVED M COMMIT - RELAYED BLOCK
+# T6 - SEND COMMIT
+# T7 - RECEIVED M COMMIT - RELAYED BLOCK

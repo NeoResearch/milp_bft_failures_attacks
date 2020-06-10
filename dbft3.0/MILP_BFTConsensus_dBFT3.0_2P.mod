@@ -92,38 +92,43 @@ sendPrepReqOnlyIfViewBeforeWasAccomplished{p in P,i in R, v in V: v>1}: sum{t in
 /* Prepare response constraints */
 # prepRespQuicklySendIfHonest{p in P, t in T, i in R_OK, v in V:t>1}: SendPrepResp[p,t,i,v] >= sum{j in R} RecvPrepReq[p,t-1,i,j,v];
 prepRespSendOrNotIfYouAreByzantine{p in P, t in T, i in R, v in V: t>1}: SendPrepResp[p,t,i,v] <= sum{t2 in T:t2<t} sum{j in R} RecvPrepReq[p,t2,i,j,v];
-
-# This is the trick - Most hard constraint and damage detected until now
-sendPrepResponseOnlyOnceForNonByz{i in R, v in V}: sum{t in T} sum{p in P} SendPrepResp[p,t,i,v] <= 1;
 sendPrepResponseOnlyOnceForAll{p in P, i in R, v in V}: sum{t in T} SendPrepResp[p,t,i,v] <= 1;
-
+# This is the trick - Most hard constraint and damage detected until now
+# TODO - Commented for now but looks essential
+#sendPrepResponseOnlyOnceForNonByz{i in R_OK, v in V}: sum{t in T} sum{p in P} SendPrepResp[p,t,i,v] <= 1;
 prepRespReceivedWhenSelfSended{p in P,t in T, i in R, v in V: t>1}: RecvPrepResp[p,t,i,i,v] = SendPrepResp[p,t,i,v];
 prepRespReceivedSendByJ{p in P,t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepResp[p,t,i,j,v] <= sum{t2 in T: t2<t} SendPrepResp[p,t2,j,v];
-receivedPrepResponseOnlyOnceForAnyPrimary{i in R_OK, j in R, v in V}: sum{t in T} sum{p in P} RecvPrepResp[p,t,i,j,v] <= 1;
 receivedPrepResponseOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvPrepResp[p,t,i,j,v] <= 1;
+receivedPrepResponseOnlyOnceForAnyPrimary{i in R_OK, j in R, v in V}: sum{p in P} sum{t in T} RecvPrepResp[p,t,i,j,v] <= 1;
 # If we consider R_OK then N blocks are produced - Modify those 2 constraints below for more realistic Byzantine behavior
 # sendPrepResponseOnlyIfBlockNotRelayed and sendPrepResponseOnlyIfViewBeforeWasAccomplished
-sendPrepResponseOnlyIfBlockNotRelayed{p in P,i in R, v in V: v>1}: sum{t in T} SendPrepResp[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
-sendPrepResponseOnlyIfViewBeforeWasAccomplished{p in P,i in R, v in V: v>1}: sum{t in T} SendPrepResp[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+sendPrepResponseOnlyIfBlockNotRelayed{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendPrepResp[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
+sendPrepResponseOnlyIfViewBeforeWasAccomplished{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendPrepResp[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 
 /* Pre-Commit constraints */
-preCommitQuicklySendIfHonest1{t in T, i in R, v in V:t>1}: SendPreCommit[1,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/(f+1);
-preCommitQuicklySendIfHonest2{t in T, i in R, v in V:t>1}: SendPreCommit[2,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPrepResp[2,t2,i,j,v])/(M);
+preCommitSendIfHonestP1lightf{t in T, i in R, v in V:t>1}: SendPreCommit[1,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/(f+1);
+preCommitSendIfHonestP2harderM{t in T, i in R, v in V:t>1}: SendPreCommit[2,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[2,t2,i,j,v])/(M);
 #sendPreCommitOnlyOnce{i in R, v in V}: sum{t in T} sum{p in P} SendPreCommit[p,t,i,v] <= 1;
 sendPreCommitOnlyOnce{p in P, i in R, v in V}: sum{t in T} SendPreCommit[p,t,i,v] <= 1;
+# TODO - Commented for now but looks essential
+#sendPreCommitOnlyOnceForNonByz{i in R, v in V}: sum{p in P} sum{t in T} SendPreCommit[p,t,i,v] <= 1;
 preCommitReceivedWhenSelfSended{p in P,t in T, i in R, v in V: t>1}: RecvPreCommit[p,t,i,i,v] = SendPreCommit[p,t,i,v];
 preCommitReceivedSendByJ{p in P,t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPreCommit[p,t,i,j,v] <= sum{t2 in T: t2<t} SendPreCommit[p,t2,j,v];
 receivedPreCommitOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvPreCommit[p,t,i,j,v] <= 1;
-sendPreCommitOnlyIfChangeViewNotSent{p in P,i in R, v in V}: sum{t in T} SendPreCommit[p,t,i,v] <= (1 - sum{t in T} SendCV[t, i, v]);
 # If we consider R_OK then N blocks are produced - Modify those 2 constraints below for more realistic Byzantine behavior
 # sendPrepResponseOnlyIfBlockNotRelayed and sendPrepResponseOnlyIfViewBeforeWasAccomplished
-sendPreCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R, v in V: v>1}: sum{t in T} SendPreCommit[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
-sendPreCommitOnlyIfBlockNotRelayed{p in P,i in R, v in V: v>1}: sum{t in T} SendPreCommit[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
+sendPreCommitOnlyIfChangeViewNotSent{p in P,i in R_OK, v in V}: sum{t in T} SendPreCommit[p,t,i,v] <= (1 - sum{t in T} SendCV[t, i, v]);
+sendPreCommitOnlyIfBlockNotRelayed{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendPreCommit[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
+sendPreCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendPreCommit[p,t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+# Send commit if you are really sure with M of 1
+#commitSentSpeedUpIfMPrepReq{p in P,t in T, i in R, v in V:t>1}: SendCommit[p,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/M;
 
 /* Commit constraints */
-commitSentIfMPrepResp{p in P,t in T, i in R, v in V:t>1}: SendCommit[p,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPreCommit[p,t2,i,j,v])/M;
-#sendCommitOnlyOnce{i in R, v in V}: sum{t in T} sum{p in P} SendCommit[p,t,i,v] <= 1;
+commitSentIfMPreCommits1WithSpeedUp{t in T, i in R, v in V:t>1}: SendCommit[1,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPreCommit[1,t2,i,j,v])/M + (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/M;
+commitSentIfMPreCommits2{t in T, i in R, v in V:t>1}: SendCommit[2,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPreCommit[2,t2,i,j,v])/M;
 sendCommitOnlyOnce{p in P, i in R, v in V}: sum{t in T} SendCommit[p,t,i,v] <= 1;
+# This is the trick - Most hard constraint and damage detected until now FOR THE SPEEDUP TO WORK
+sendCommitOnlyOnceForNonByz{i in R_OK, v in V}: sum{t in T} sum{p in P} SendCommit[p,t,i,v] <= 1;
 commitReceivedWhenSelfSended{p in P,t in T, i in R, v in V: t>1}: RecvCommit[p,t,i,i,v] = SendCommit[p,t,i,v];
 commitReceivedSendByJ{p in P,t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCommit[p,t,i,j,v] <= sum{t2 in T: t2<t} SendCommit[p,t2,j,v];
 receivedCommitOnlyOnce{p in P,i in R, j in R, v in V}: sum{t in T} RecvCommit[p,t,i,j,v] <= 1;
@@ -134,11 +139,12 @@ sendCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R_OK, v in V: v>1}: sum{t 
 sendCommitOnlyIfBlockNotRelayed{p in P,i in R_OK, v in V: v>1}: sum{t in T} SendCommit[p,t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[p,t, i, v2]);
 
 /* Block relay constraints */
-blockRelayIfEnoughPrepResp{p in P, t in T, i in R, v in V: t>1}: BlockRelay[p,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvCommit[p,t2,i,j,v])/M;
+blockRelayIfEnoughCommits{p in P, t in T, i in R, v in V: t>1}: BlockRelay[p,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvCommit[p,t2,i,j,v])/M;
 # Even non byzantine. However, it was interesting observed that it could happen if R_OK on blockRelayLimitToOneForNonByz
-blockRelayOnlyOncePerViewPerPrimaryNonByz{i in R_OK, v in V}: sum{t in T} sum{p in P} BlockRelay[p,t,i,v] <= 1;
 blockRelayOnlyOncePerViewPerPrimaryForAll{p in P, i in R, v in V}: sum{t in T} BlockRelay[p,t,i,v] <= 1;
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} sum{p in P} BlockRelay[p,t,i,v] <= 1;
+# TODO - REMOVE
+#blockRelayOnlyOncePerViewPerPrimaryNonByz{i in R_OK, v in V}: sum{t in T} sum{p in P} BlockRelay[p,t,i,v] <= 1;
 #blockRelayLimitForAll{p in P, i in R}: sum{t in T} sum{v in V} BlockRelay[p,t,i,v] <= 1;
 
 /* Change view constraints */
@@ -157,6 +163,7 @@ sendCVOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendC
 # Blocks relayed by other nodes can delay. In this sense, primary can start its tasks.
 # That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])
 nextPrimaryOnlyIfBlockNotRelayed{p in P, i in R, v in V: v>1}: Primary[p,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} sum{p2 in P} BlockRelay[p2,t, i,v2]);
+sendCVOnlyIfCommitNotSent{p in P, i in R_OK, v in V}: sum{t in T} SendCV[t,i,v] <= (1 - sum{t in T} SendCommit[p, t, i, v]);
 
 /* Calculation of auxiliary variables */
 calcIfBlockRelayedOnView{p in P, v in V}: blockRelayed[p,v] <= sum{t in T} sum{i in R} BlockRelay[p,t, i, v];

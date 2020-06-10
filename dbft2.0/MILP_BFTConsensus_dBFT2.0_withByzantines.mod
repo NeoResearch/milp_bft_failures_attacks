@@ -77,8 +77,9 @@ sendPrepReqOnlyIfBlockNotRelayed{i in R_OK, v in V: v>1}: sum{t in T} SendPrepRe
 sendPrepReqOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendPrepReq[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 
 /* Prepare response constraints */
-prepRespQuicklySendIfHonest{t in T, i in R_OK, v in V:t>1}: SendPrepResp[t,i,v] >= sum{j in R} RecvPrepReq[t-1,i,j,v];
-prepRespSendOrNotIfYouAreByzantine{t in T, i in R, v in V: t>1}: SendPrepResp[t,i,v] <= sum{t2 in T:t2<t} sum{j in R} RecvPrepReq[t2,i,j,v];
+## This constraint should be commented perhaps since anyone can delay
+#prepRespQuicklySendIfHonest{t in T, i in R_OK, v in V:t>1}: SendPrepResp[t,i,v] >= sum{j in R} RecvPrepReq[t-1,i,j,v];
+prepRespSendOrNotIfYouAreByzantine{t in T, i in R, v in V: t>1}: SendPrepResp[t,i,v] <= sum{t2 in T:t2<=t} sum{j in R} RecvPrepReq[t2,i,j,v];
 sendPrepResponseOnlyOnce{i in R, v in V}: sum{t in T} SendPrepResp[t,i,v] <= 1;
 prepRespReceivedWhenSelfSended{t in T, i in R, v in V: t>1}: RecvPrepResp[t,i,i,v] = SendPrepResp[t,i,v];
 prepRespReceivedSendByJ{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepResp[t,i,j,v] <= sum{t2 in T: t2<t} SendPrepResp[t2,j,v];
@@ -89,7 +90,7 @@ sendPrepResponseOnlyIfBlockNotRelayed{i in R_OK, v in V: v>1}: sum{t in T} SendP
 sendPrepResponseOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} SendPrepResp[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
 
 /* Commit constraints */
-commitSentIfMPrepResp{t in T, i in R, v in V:t>1}: SendCommit[t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPrepResp[t2,i,j,v])/M;
+commitSentIfMPrepResp{t in T, i in R, v in V:t>1}: SendCommit[t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[t2,i,j,v])/M;
 sendCommitOnlyOnce{i in R, v in V}: sum{t in T} SendCommit[t,i,v] <= 1;
 commitReceivedWhenSelfSended{t in T, i in R, v in V: t>1}: RecvCommit[t,i,i,v] = SendCommit[t,i,v];
 commitReceivedSendByJ{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCommit[t,i,j,v] <= sum{t2 in T: t2<t} SendCommit[t2,j,v];
@@ -101,7 +102,7 @@ sendCommitOnlyIfViewBeforeWasAccomplished{i in R_OK, v in V: v>1}: sum{t in T} S
 sendCommitOnlyIfBlockNotRelayed{i in R_OK, v in V: v>1}: sum{t in T} SendCommit[t,i,v] <= (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i, v2]);
 
 /* Block relay constraints */
-blockRelayIfEnoughPrepResp{t in T, i in R, v in V: t>1}: BlockRelay[t, i, v] <= (sum{t2 in T: t2<t} sum{j in R} RecvCommit[t2,i,j,v])/M;
+blockRelayIfEnoughCommits{t in T, i in R, v in V: t>1}: BlockRelay[t, i, v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvCommit[t2,i,j,v])/M;
 blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 # Even non byzantine. However, it was interesting observed that it could happen if R_OK on blockRelayLimitToOneForNonByz
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;

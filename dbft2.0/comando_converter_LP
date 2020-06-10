@@ -3,9 +3,9 @@ glpsol --model MILP_BFTConsensus_dBFT2.0.mod --data 7Nodes_TMax20.dat --wcpxlp n
 glpsol --model MILP_BFTConsensus_dBFT2.0.mod --data 10Nodes_TMax30.dat --wcpxlp n10.lp --check
 
 
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 4Nodes_TMax20.dat --wcpxlp n4-dbft-2.0-biz.lp --check
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 7Nodes_TMax20.dat --wcpxlp n7-dbft-2.0-biz.lp --check
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 10Nodes_TMax.dat --wcpxlp n10-dbft-2.0-biz.lp --check
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 4Nodes_TMax20.dat --wcpxlp n4-dbft-2.0-biz.lp --check && mv n4-dbft2.0-biz.lp ../python-mip/
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 7Nodes_TMax20.dat --wcpxlp n7-dbft-2.0-biz.lp --check && mv n7-dbft2.0-biz.lp ../python-mip/
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines.mod --data 10Nodes_TMax.dat --wcpxlp n10-dbft-2.0-biz.lp --check && mv n10-dbft2.0-biz.lp ../python-mip/
 
 cplex
 r n4.lp

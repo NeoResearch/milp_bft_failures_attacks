@@ -4,19 +4,17 @@ import sys
 file_name = sys.argv[1]
 
 m = Model()
-
 m = Model(sense=mip.MAXIMIZE,solver_name=GUROBI) # use GRB for Gurobi
 m.SearchEmphasis = 2
-m.read(file_name)
+m.max_gap = 0.05
 
-#m.start = m.read("./test.sol")
+m.read(file_name)
 print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_rows, m.num_nz))
 
 
-m.max_gap = 0.05
-m.read("testToWrite.sol")
+#m.start = m.read("./test.sol")
+#m.read("testToWrite.sol")
 print('validating mipstart {}'.format(m.validate_mip_start()))
-
 
 status = m.optimize(max_seconds=200)
 if status == OptimizationStatus.OPTIMAL:
@@ -33,7 +31,6 @@ if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE
 
 m.write("testToWrite.sol")
 
-#m.sol.wr
           
 for k in range(m.num_solutions):
     print('Solution {} with Blocks {}'.format(k, m.objective_values[k]))
