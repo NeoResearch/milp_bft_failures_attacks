@@ -13,7 +13,7 @@ print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_ro
 
 
 #m.start = m.read("./test.sol")
-#m.read("testToWrite.sol")
+m.read("testToWrite.sol")
 print('validating mipstart {}'.format(m.validate_mip_start()))
 
 status = m.optimize(max_seconds=600)

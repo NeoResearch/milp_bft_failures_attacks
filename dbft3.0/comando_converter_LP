@@ -1,4 +1,4 @@
-glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 4Nodes_TMax20.dat --wcpxlp n4-dbft3.0-biz.lp --check && mv n4-dbft3.0-biz.lp ../python-mip/
+glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 4Nodes_TMax20.dat --wcpxlp n4-dbft3.0-biz.lp --check && mv n4-dbft3.0-biz.lp ../python-mip/ && (cd ../python-mip/ && python3 test-python-mip.py n4-dbft3.0-biz.lp)
 glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 7Nodes_TMax20.dat --wcpxlp n7-dbft3.0-biz.lp --check && mv n7-dbft3.0-biz.lp ../python-mip/
 glpsol --model MILP_BFTConsensus_dBFT3.0_2P.mod --data 10Nodes_TMax30.dat --wcpxlp n10-dbft3.0-biz.lp --check && mv n10-dbft3.0-biz.lp ../python-mip/
 

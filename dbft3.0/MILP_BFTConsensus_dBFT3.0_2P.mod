@@ -1,6 +1,7 @@
 param f; /* number of faulty/Byzantine replicas. */
 param N; /* total number of replicas. $N = |R| = |R^{OK}| + |R^{BYZ}| = 3f + 1$. */
 param M; /* safety level. $M = 2f + 1$. */
+param SPEEDUP;
 
 /* consensus replica $i$ from set of replicas R. 
 $R^{OK}$ is non-byzantine set. 
@@ -123,7 +124,7 @@ sendPreCommitOnlyIfViewBeforeWasAccomplished{p in P,i in R_OK, v in V: v>1}: sum
 #commitSentSpeedUpIfMPrepReq{p in P,t in T, i in R, v in V:t>1}: SendCommit[p,t,i,v] <= (sum{t2 in T: t2<t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/M;
 
 /* Commit constraints */
-commitSentIfMPreCommits1WithSpeedUp{t in T, i in R, v in V:t>1}: SendCommit[1,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPreCommit[1,t2,i,j,v])/M + (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/M;
+commitSentIfMPreCommits1WithSpeedUp{t in T, i in R, v in V:t>1}: SendCommit[1,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPreCommit[1,t2,i,j,v])/M + (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[1,t2,i,j,v])/M*SPEEDUP;
 commitSentIfMPreCommits2{t in T, i in R, v in V:t>1}: SendCommit[2,t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPreCommit[2,t2,i,j,v])/M;
 sendCommitOnlyOnce{p in P, i in R, v in V}: sum{t in T} SendCommit[p,t,i,v] <= 1;
 # This is the trick - Most hard constraint and damage detected until now FOR THE SPEEDUP TO WORK
