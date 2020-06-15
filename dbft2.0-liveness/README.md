@@ -1,9 +1,3 @@
-data;
-param f := 1;
-param N := 4;
-param M := 3;
-param tMax := 8;
-# 
 # T1 - NULL
 # T2 - SEND PREPREQ
 # T3 - RECEIVED PREPREQ - SEND PREPRESPONSE

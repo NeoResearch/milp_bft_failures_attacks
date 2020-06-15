@@ -1,9 +1,3 @@
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 4Nodes_TMax20.dat --wcpxlp n4-dbft-2.0-biz.lp --check && mv n4-dbft2.0-biz-liveness.lp ../python-mip/ && (cd ../python-mip/ && python3 test-python-mip.py n4-dbft-2.0-biz-liveness.lp)
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 7Nodes_TMax20.dat --wcpxlp n7-dbft-2.0-biz.lp --check && mv n7-dbft2.0-biz-liveness.lp ../python-mip/
-glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 10Nodes_TMax.dat --wcpxlp n10-dbft-2.0-biz.lp --check && mv n10-dbft2.0-biz-liveness.lp ../python-mip/
-
-cplex
-r n4.lp
-o
-w soln4.sol
-w soln7.sol
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 4Nodes_TMax.dat --wcpxlp n4-dbft2.0-biz-liveness.lp --check && mv n4-dbft2.0-biz-liveness.lp ../python-mip/ && (cd ../python-mip/ && python3 test-python-mip.py n4-dbft2.0-biz-liveness.lp)
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 7Nodes_TMax.dat --wcpxlp n7-dbft2.0-biz-liveness.lp --check && mv n7-dbft2.0-biz-liveness.lp ../python-mip/ && (cd ../python-mip/ && python3 test-python-mip.py n7-dbft2.0-biz-liveness.lp)
+glpsol --model MILP_BFTConsensus_dBFT2.0_withByzantines_liveness.mod --data 10Nodes_TMax.dat --wcpxlp n10-dbft2.0-biz-liveness.lp --check && mv n10-dbft2.0-biz-liveness.lp ../python-mip/ && (cd ../python-mip/ && python3 test-python-mip.py n10-dbft2.0-biz-liveness.lp)

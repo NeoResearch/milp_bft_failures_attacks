@@ -11,9 +11,9 @@ m.max_gap = 0.05
 m.read(file_name)
 print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_rows, m.num_nz))
 
-
-#m.start = m.read("./test.sol")
+# Load MIP to speed-up process
 m.read("testToWrite.sol")
+
 print('validating mipstart {}'.format(m.validate_mip_start()))
 
 status = m.optimize(max_seconds=600)
