@@ -164,18 +164,20 @@ noPrepResIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= (1 - sum{t2
 noCommitIfCV {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= (1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v]);
 /* LINKS Commit and LIMITS */
 noCVIfCommit     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
-noPrepReqIfCommit{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
-noPrepResIfCommit{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
-noCommitIfCommit {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
 /* LINKS BlockRelayed and LIMITS */
 noBlockYesCV     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepReq{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepRes{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesCommit {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
-noBlockOldViewsYesPrimary{i in R_OK, v in V: v>1}: Primary[i,v]                        <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
-noBlockOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
-noBlockOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
-noBlockOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
+/* LINKS BlockRelayed and LIMITS in past views*/
+noBlockOldViewsYesPrimary {i in R_OK, v in V: v>1}: Primary[i,v]                        <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
+noBlockOldViewsYesPrepReq {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
+noBlockOldViewsYesPrepRes {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
+noBlockOldViewsYesCommit  {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
+noCommitOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
+noCommitOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
+noCommitOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
+noCommitOldViewsYesCV {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 
 /* ============== Calculation of auxiliary variables ============== */
@@ -197,9 +199,9 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 /* ============== Calculation of auxiliary variables finished ============== */
 
 /* ============== Obj Function ============== */
-minimize obj: totalBlockRelayed;
+#minimize obj: totalBlockRelayed;
 #minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
-#maximize obj: totalBlockRelayed*1000; # + lastRelayedBlock*-1;
+maximize obj: totalBlockRelayed*1000; # + lastRelayedBlock*-1;
 # lastRelayedBlock + 
 # + numberOfRounds*-1
 #*1000 + lastRelayedBlock;
