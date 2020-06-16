@@ -203,8 +203,8 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 /* ============== Calculation of auxiliary variables finished ============== */
 
 /* ============== Obj Function ============== */
-#minimize obj: totalBlockRelayed + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
-minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
+minimize obj: totalBlockRelayed + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
+#minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
 #maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1;
 # lastRelayedBlock + 
 # + numberOfRounds*-1
