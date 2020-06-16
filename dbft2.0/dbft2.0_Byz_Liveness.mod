@@ -83,18 +83,18 @@ nextPrimaryOnlyIfEnoughCV{i in R, v in V: v>1}: Primary[i,v] <= changeViewRecvPe
 /* ============== Primary constraints ============== */
 
 /* ============== Prepare request constraints ============== */
-#Ensure single PreReq and discard any other except from Primary
-prepReqOnlyOnceAndSentOptionally{i in R, v in V}: sum{t in T} SendPrepReq[t,i,v] <= Primary[i,v];
+# --------- General comments -------------
+# Ensure single PreReq and discard any other except from Primary
 # PrepRequest Received instantaneously when Self Sended (SS)
-prepReqReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepReq[t,i,i,v] = SendPrepReq[t,i,v];
 # Only Recv if it was sended before, otherwise it is infeasible
+# --------- General comments -------------
+prepReqOnlyOnceAndSentOptionally{i in R, v in V}: sum{t in T} SendPrepReq[t,i,v] <= Primary[i,v];
+prepReqReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepReq[t,i,i,v] = SendPrepReq[t,i,v];
 prepReqReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepReq[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendPrepReq[t2,j,v];
 prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepReq[t,i,j,v] <= 1;
 /* ============== Prepare request constraints finished ==============*/
 
 /* ============== Prepare response constraints ==============*/
-## This constraint should be commented perhaps since anyone can delay
-#prepRespQuicklySendIfHonest{t in T, i in R_OK, v in V:t>1}: SendPrepRes[t,i,v] >= sum{j in R} RecvPrepReq[t-1,i,j,v];
 sendPrepResonseOnlyOnce{i in R, v in V}: sum{t in T} SendPrepRes[t,i,v] <= 1;
 prepRespSendOptionally{t in T, i in R, v in V: t>1}: SendPrepRes[t,i,v] <= sum{t2 in T:t2<=t} sum{j in R} RecvPrepReq[t2,i,j,v];
 prepRespReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepResp[t,i,i,v] = SendPrepRes[t,i,v];
@@ -115,13 +115,6 @@ sendCVOnlyOncePerView{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
 receivedCVSS{t in T, i in R, v in V: t>1}: RecvCV[t,i,i,v] = SendCV[t,i,v];
 receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendCV[t2,j,v];
 receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
-## THIS CHANGE MAYBE SHOULD BE PORTED, IF CHANGED VIEW A Primary SHOULD EXIST  ---- TODO FROM <= TO >= ON OTHER MODELS
-# Even for Byzantine node, if we consider R_OK problem become more complex. Thus, even byzantine will not cheat if relayed
-# All 3 constraints below could be R_OK for more realistic scenario
-# sendCVIfNonByzAndBlockNotRelayed, sendCVOnlyIfViewBeforeWasAccomplished and  nextPrimaryOnlyIfBlockNotRelayed
-# Blocks relayed by other nodes can delay. In this sense, Primary can start its tasks.
-# That is why we use (1 - sum{t in T} sum{v2 in V:v2<v} BlockRelay[t, i,v2])
-# Only send CV if commit not sent
 /* ============== Change view constraints finished ============== */
 
 /* ============== Block relay constraints ============== */
