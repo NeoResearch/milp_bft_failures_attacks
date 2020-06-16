@@ -150,8 +150,12 @@ sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
 # Send CV if not ReceivedPrepReq
-assertSendCVIfNotRecvPrepReqV1{i in R_OK, v in V: v=1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v]));
-assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]); 
+assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - (sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]));
+assertSendCVIfNotEnoughPrepResV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvPrepResp[t,i,j,1]);
+assertSendCVIfNotEnoughCommitsV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvCommit[t,i,j,1]);
+assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,v] - (sum{t in T: t>1} SendCommit[t, i,v-1]) - (1 - sum{ii in R} Primary[ii,v-1]);
+
+#assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]) - ; 
 # Mayber other asserts should be included here
 
 /* HONEST NODES CONSTRAINTS */
@@ -202,7 +206,8 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 /* ============== Obj Function ============== */
 #minimize obj: totalBlockRelayed;
 #minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
-maximize obj: totalBlockRelayed*1000; # + lastRelayedBlock*-1;
+maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
+maximize obj: totalBlockRelayed*1000 + numberOfRounds; 
 # lastRelayedBlock + 
 # + numberOfRounds*-1
 #*1000 + lastRelayedBlock;
