@@ -131,7 +131,8 @@ blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 /* ----- Force nodes to receive if comes from Honest --- */
 
-/* 2 acts as a BIGNUM to force a Primary to exist if any honest knows change views*/
+# 2 acts as a BIGNUM
+# to force a Primary to exist if any honest knows change views
 assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*2    >= (changeViewRecvPerNodeAndView[i,v-1] - M + 1);
 /* We assume that messages will arrive within the simulation limits for NonByz*/
 assertSendCommitWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} SendCommit[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvPrepResp[t,i,j,v]) - M + 1);
@@ -147,6 +148,7 @@ sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 # Send CV if not ReceivedPrepReq
 assertSendCVIfNotRecvPrepReqV1{i in R_OK, v in V: v=1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v]));
 assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]); 
+# Mayber other asserts should be included here
 
 /* HONEST NODES CONSTRAINTS */
 # Even non byzantine. However, it was interesting observed that it could happen if R_OK on blockRelayLimitToOneForNonByz
