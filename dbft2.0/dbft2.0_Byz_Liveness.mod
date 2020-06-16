@@ -131,6 +131,8 @@ consequently, addding a constraint `totalBlockRelayed = 0` makes MILP infeasible
 #prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
 #commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
 # AT LEAST ONLY CV should be received - THE OTHER 3 ABOVE SHOULD NOT BE ENFORCED
+/* When only CV is forced, and numberround minimized, commits are relayed and lost
+when commits enables together we can have N rounds as minimum only */
 cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 /* ----- Force nodes to receive if comes from Honest --- */
 
