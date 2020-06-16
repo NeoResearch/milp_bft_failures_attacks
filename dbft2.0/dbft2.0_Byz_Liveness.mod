@@ -56,11 +56,6 @@ var blockRelayPerNodeAndView{R,V}, integer, >= 0;
 /* AUXILIARY VARIABLES} */
 /* =================== */
 
-var aV{R}, >= 0;
-var a, >= 0;
-var b, >= 0;
-var c, >= 0;
-
 s.t.
 
 /* Time zero constraints: */
@@ -136,31 +131,28 @@ blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 /* 2 acts as a BIGNUM to force a Primary to exist if any honest knows change views*/
-#assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*M <= changeViewRecvPerNodeAndView[i,v-1];
-assertAtLeastOnePrimaryIfEnoughCV2{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*M = changeViewRecvPerNodeAndView[i,v-1];
-
+assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*2    >= (changeViewRecvPerNodeAndView[i,v-1] - M + 1);
 /* We assume that messages will arrive within the simulation limits for NonByz*/
-assertSendPrepReqWithinSimLimit{i in R_OK, v in V}: sum{t in T: t>1}  SendPrepReq[t,i,v]   >= Primary[i,v];
-assertSendPrepResWithinSimLimit{i in R_OK, v in V}: sum{t in T: t>1}  SendPrepRes[t,i,v]   >=  sum{t in T: t>1} sum{j in R} RecvPrepReq[t,i,j,v];
-assertSendCommitWithinSimLimit {i in R_OK, v in V}: (sum{t in T: t>1} SendCommit[t,i,v])*2 >= (sum{t in T: t>1} sum{j in R} RecvPrepResp[t,i,j,v]/M) + b;
-assertBlockRelayWithinSimLimit {i in R_OK, v in V}: (sum{t in T: t>1} BlockRelay[t,i,v])*2 >= (sum{t in T: t>1} sum{j in R} RecvCommit[t,i,j,v])/M + c;
+assertSendCommitWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} SendCommit[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvPrepResp[t,i,j,v]) - M + 1);
+assertBlockRelayWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} BlockRelay[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvCommit[t,i,j,v]) - M + 1);
+assertSendPrepReqWithinSimLimit  {i in R_OK, v in V}: sum{t in T: t>1}  SendPrepReq[t,i,v]   >= Primary[i,v];
+assertSendPrepResWithinSimLimit  {i in R_OK, v in V}: sum{t in T: t>1}  SendPrepRes[t,i,v]   >= sum{t in T: t>1} sum{j in R} RecvPrepReq[t,i,j,v];
 
 /* Force nodes to receive if comes from Honest */
 #prepReqReceivedNonByz {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepReq[t,i,j,v]  >= sum{t in T: t>1} SendPrepReq[t,j,v];
-#commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
 #prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
+#commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
 # AT LEAST ONLY CV should be received - THE OTHER 3 ABOVE SHOULD NOT BE ENFORCED
-#cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
-/* Force nodes to receive if comes from Honest */
+cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 
-#sendPrepResonseOnlyIfViewBeforeWasAccomplishedNonByz{i in R_OK, v in V: v>1}: sum{t in T} SendPrepRes[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
-#sendPrepReqOnlyIfViewBeforeWasAccomplishedNonByz{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
-#sendCommitOnlyIfViewBeforeWasAccomplishedNonByz{i in R_OK, v in V: v>1}: sum{t in T} SendCommit[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
-#sendCVOnlyIfViewBeforeWasAccomplishedNonByz{i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] <= (sum{j in R} sum{t in T} RecvCV[t,i,j,v-1])/M;
+sendPrepResOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
+sendPrepReqOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
+sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= changeViewRecvPerNodeAndView[i,v-1]/M;
+sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
 # Send CV if not ReceivedPrepReq
-#forceCVIfPrepReqtNotSentv1NonByz {i in R_OK}:              sum{t in T} SendCV[t,i,1] >= (1 - prepReqRecvPerNodeAndView[i,1]);
-#forceCVIfPrepReqtNotSentAllNonByz{i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - prepReqRecvPerNodeAndView[i,v]) - (1 - sum{ii in R} Primary[ii,v]); 
+assertSendCVIfNotRecvPrepReqV1{i in R_OK, v in V: v=1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v]));
+assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]); 
 
 /* LINKS CV AND PrepReq,PrepRes and Commit */
 noPrepReqIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= (1 - sum{t2 in T: t2<t and t2>1} SendCV[t2,i,v]);
@@ -177,10 +169,10 @@ noBlockYesCV     {i in R_OK, v in V, t in T}: SendCV[t,i,v]      <= 1 - sum{t2 i
 noBlockYesPrepReq{i in R_OK, v in V, t in T}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepRes{i in R_OK, v in V, t in T}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesCommit {i in R_OK, v in V, t in T}: SendCommit[t,i,v]  <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
-noBlockOldViewsYesPrimary{i in R_OK, v in V: v>1}: Primary[i,v]                        <= (1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2]);
-noBlockOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= (1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2]);
-noBlockOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= (1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2]);
-noBlockOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= (1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2]);
+noBlockOldViewsYesPrimary{i in R_OK, v in V: v>1}: Primary[i,v]                        <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
+noBlockOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
+noBlockOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
+noBlockOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t, i, v2];
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 
 
@@ -203,7 +195,7 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 /* ============== Calculation of auxiliary variables finished ============== */
 
 /* ============== Obj Function ============== */
-minimize obj: totalBlockRelayed + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
+minimize obj: totalBlockRelayed;
 #minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
 #maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1;
 # lastRelayedBlock + 
