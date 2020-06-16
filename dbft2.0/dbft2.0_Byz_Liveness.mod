@@ -159,9 +159,9 @@ assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
 
 /* LINKS CV AND PrepReq,PrepRes and Commit */
-noPrepReqIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= (1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v]);
-noPrepResIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= (1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v]);
-noCommitIfCV {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= (1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v]);
+noPrepReqIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v]     <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
+noPrepResIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v]     <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
+noCommitIfCV {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
 /* LINKS Commit and LIMITS */
 noCVIfCommit     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
 /* LINKS BlockRelayed and LIMITS */
@@ -174,10 +174,11 @@ noBlockOldViewsYesPrimary {i in R_OK, v in V: v>1}: Primary[i,v]                
 noBlockOldViewsYesPrepReq {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
 noBlockOldViewsYesPrepRes {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
 noBlockOldViewsYesCommit  {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
+/* LINKS Commit and LIMITS in past views*/
 noCommitOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
-noCommitOldViewsYesCV {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
+noCommitOldViewsYesCV     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 
 /* ============== Calculation of auxiliary variables ============== */
