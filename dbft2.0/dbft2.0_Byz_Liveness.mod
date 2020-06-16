@@ -125,12 +125,14 @@ blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 /* ----- Force nodes to receive if comes from Honest --- */
 /* We assume that messages will arrive within the simulation limits for NonByz*/
-#prepReqReceivedNonByz {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepReq[t,i,j,v]  >= sum{t in T: t>1} SendPrepReq[t,j,v];
-#prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
-#commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
+/* If enables they force 1 block as minimum and force: totalBlockRelayed = 0 makes MILP infeasible or unbounded */ 
+prepReqReceivedNonByz {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepReq[t,i,j,v]  >= sum{t in T: t>1} SendPrepReq[t,j,v];
+prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
+commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
 # AT LEAST ONLY CV should be received - THE OTHER 3 ABOVE SHOULD NOT BE ENFORCED
 cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 /* ----- Force nodes to receive if comes from Honest --- */
+
 
 # 2 acts as a BIGNUM
 # to force a Primary to exist if any honest knows change views
@@ -150,10 +152,12 @@ sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
 # Send CV if not ReceivedPrepReq
-assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - (sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]));
-assertSendCVIfNotEnoughPrepResV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvPrepResp[t,i,j,1]);
-assertSendCVIfNotEnoughCommitsV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvCommit[t,i,j,1]);
-assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,v] - (sum{t in T: t>1} SendCommit[t, i,v-1]) - (1 - sum{ii in R} Primary[ii,v-1]);
+#assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]);
+assertSendCVIfNotSendCommitV1 {i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 -             sum{t in T: t>1} SendCommit[t,i,1]);
+#assertSendCVIfNotEnoughPrepResV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvPrepResp[t,i,j,1]);
+#assertSendCVIfNotEnoughCommitsV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvCommit[t,i,j,1]);
+#assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,v] - (sum{t in T: t>1} SendCommit[t, i,v-1]) - (1 - sum{ii in R} Primary[ii,v-1]);
+assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t, i,v-1] - (1 - sum{ii in R} Primary[ii,v-1]);
 
 #assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]) - ; 
 # Mayber other asserts should be included here
@@ -205,9 +209,9 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 
 /* ============== Obj Function ============== */
 #minimize obj: totalBlockRelayed;
-#minimize obj: totalBlockRelayed + numberOfRounds*-1*100 + (sum{i in R} aV[i]*100000) + (a+b+c)*100000;
-maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
-maximize obj: totalBlockRelayed*1000 + numberOfRounds; 
+minimize obj: totalBlockRelayed*1000 + numberOfRounds*100;
+#maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
+#maximize obj: totalBlockRelayed*1000 + numberOfRounds; 
 # lastRelayedBlock + 
 # + numberOfRounds*-1
 #*1000 + lastRelayedBlock;
