@@ -124,6 +124,7 @@ blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 /* ----- Force nodes to receive if comes from Honest --- */
+/* We assume that messages will arrive within the simulation limits for NonByz*/
 #prepReqReceivedNonByz {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepReq[t,i,j,v]  >= sum{t in T: t>1} SendPrepReq[t,j,v];
 #prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
 #commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
@@ -134,12 +135,15 @@ cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} Rec
 # 2 acts as a BIGNUM
 # to force a Primary to exist if any honest knows change views
 assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*2    >= (changeViewRecvPerNodeAndView[i,v-1] - M + 1);
-/* We assume that messages will arrive within the simulation limits for NonByz*/
-assertSendCommitWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} SendCommit[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvPrepResp[t,i,j,v]) - M + 1);
-assertBlockRelayWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} BlockRelay[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvCommit[t,i,j,v]) - M + 1);
+
+/* We assume that honest nodes will perform an action within the simulation limits*/
 assertSendPrepReqWithinSimLimit  {i in R_OK, v in V}: sum{t in T: t>1}  SendPrepReq[t,i,v]   >= Primary[i,v];
 assertSendPrepResWithinSimLimit  {i in R_OK, v in V}: sum{t in T: t>1}  SendPrepRes[t,i,v]   >= sum{t in T: t>1} sum{j in R} RecvPrepReq[t,i,j,v];
+assertSendCommitWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} SendCommit[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvPrepResp[t,i,j,v]) - M + 1);
+assertBlockRelayWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} BlockRelay[t,i,v])*2 >= ((sum{t in T: t>1} sum{j in R} RecvCommit[t,i,j,v]) - M + 1);
 
+/* We assume that honest nodes will only perform an action if view change was approved - no view jumps 
+- not tested if really needed */
 sendPrepResOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendPrepReqOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= changeViewRecvPerNodeAndView[i,v-1]/M;
@@ -155,12 +159,12 @@ assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
 
 /* LINKS CV AND PrepReq,PrepRes and Commit */
-noPrepReqIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v]     <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
-noPrepResIfCV{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v]     <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
-noCommitIfCV {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
-/* LINKS Commit and LIMITS */
+noPrepReqIfCV    {i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
+noPrepResIfCV    {i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
+noCommitIfCV     {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= 1 - sum{t2 in T: t2<=t and t2>1} SendCV[t2,i,v];
+/* LINKS Commit and LIMITS - analogous as the constrains for SendCV*/
 noCVIfCommit     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} SendCommit[t2,i,v];
-/* LINKS BlockRelayed and LIMITS */
+/* LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV */
 noBlockYesCV     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepReq{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepRes{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
