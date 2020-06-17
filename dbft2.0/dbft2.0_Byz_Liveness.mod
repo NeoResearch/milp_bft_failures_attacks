@@ -210,12 +210,12 @@ noBlockYesCV     {i in R_OK, v in V, t in T: t>1}: SendCV[t,i,v]      <= 1 - sum
 noBlockYesPrepReq{i in R_OK, v in V, t in T: t>1}: SendPrepReq[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesPrepRes{i in R_OK, v in V, t in T: t>1}: SendPrepRes[t,i,v] <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
 noBlockYesCommit {i in R_OK, v in V, t in T: t>1}: SendCommit[t,i,v]  <= 1 - sum{t2 in T: t2<=t and t2>1} BlockRelay[t2,i,v];
-/* LINKS BlockRelayed and LIMITS in past views*/
+/* LINKS BlockRelayed and LIMITS in past views */
 noBlockOldViewsYesPrimary {i in R_OK, v in V: v>1}: Primary[i,v]                        <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
 noBlockOldViewsYesPrepReq {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
 noBlockOldViewsYesPrepRes {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
 noBlockOldViewsYesCommit  {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} BlockRelay[t,i,v2];
-/* LINKS Commit and LIMITS in past views*/
+/* LINKS Commit and LIMITS in past views */
 noCommitOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
@@ -239,8 +239,7 @@ calcPrepResponseEveryNodeAndView{i in R, v in V}: prepRespRecvPerNodeAndView[i,v
 calcCommitEveryNodeAndView{i in R, v in V}: commitRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCommit[t,i,j,v]);
 calcChangeViewEveryNodeAndView{i in R, v in V}: changeViewRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCV[t,i,j,v]);
 /* Constraints for defining a lower limit for lastRelayedBlock variable 
-On Maximization problems it should be multiplied by *-1 if the goal is to minimize the time for relaying
-*/
+On Maximization problems it should be multiplied by *-1 if the goal is to minimize the time for relaying */
 calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-1)*tMax*BlockRelay[t,i,v] + BlockRelay[t,i,v]*t);
 /* ==================== */
 /* CALCULATION OF AUXILIARY VARIABLES */
