@@ -173,7 +173,6 @@ cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} Rec
 Byz can Relay (HOLD) and never arrive */
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
 
-
 /* Force a Primary to exist if any honest knows change views - 2 acts as BIGNUM */
 assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*2    >= (changeViewRecvPerNodeAndView[i,v-1] - M + 1);
 
@@ -190,7 +189,8 @@ sendPrepReqOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
-# Send CV if not ReceivedPrepReq
+/* Assert Non-byz to SendCV every round, if commit not achieved 
+After first round we need to ensure circular behavior in order to not force if round is not active */
 assertSendCVIfNotSendCommitV1 {i in R_OK}:   sum{t in T: t>1}              SendCV[t,i,1] >= 1 - sum{t in T: t>1} SendCommit[t,i,1];
 assertSendCVIfNotCommitAndYesPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t,i,v-1] - (1 - sum{ii in R} Primary[ii,v-1]);
 # The following four constraints may soon be excluded - Where used on old tests
