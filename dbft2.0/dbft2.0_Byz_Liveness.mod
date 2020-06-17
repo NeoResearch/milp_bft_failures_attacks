@@ -161,15 +161,15 @@ blockRelayedCounterForced{v in V}: blockRelayed[v]*N >= sum{t in T} sum{i in R} 
 /* HONEST NODE CONSTRAINTS */
 /* ==================== */
 /* ----- Force nodes to receive if comes from Honest --- */
-/* We assume that messages will arrive within the simulation limits for NonByz*/
-/* If all three are enabled together they force 1 block as minimum
+/* These 4 following constraints force that payloads will arrive within the simulation limits of a given view for NonByz
+Which is not completelly correct.
+Note that, if all are enabled together they force 1 block as minimum
 consequently, addding a constraint `totalBlockRelayed = 0` makes MILP infeasible or unbounded */ 
 #prepReqReceivedNonByz {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepReq[t,i,j,v]  >= sum{t in T: t>1} SendPrepReq[t,j,v];
 #prepRespReceivedNonByz{i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] >= sum{t in T: t>1} SendPrepRes[t,j,v];
 #commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
-# AT LEAST ONLY CV should be received - THE OTHER 3 ABOVE SHOULD NOT BE ENFORCED
-/* When only CV is forced, and numberround minimized, commits are relayed and lost
-when commits enables together we can have N rounds as minimum only */
+/* In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
+On the other hand, enabling it and commits together, model can only find N rounds as minimum*/
 cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 /* ----- Force nodes to receive if comes from Honest --- */
 
