@@ -1,17 +1,13 @@
-param f; /* number of faulty/Byzantine replicas. */
 param N; /* total number of replicas. $N = |R| = |R^{OK}| + |R^{BYZ}| = 3f + 1$. */
+param f; /* number of faulty/Byzantine replicas. $f=|N - 1|/3|*/
 param M; /* safety level. $M = 2f + 1$. */
 
 /* consensus replica $i$ from set of replicas R. 
-$R^{OK}$ is non-byzantine set. 
-$R = R^{OK} \cup R^{BYZ} = 1M+1..M+F$, 
-such that $R^{OK} \cap R^{BYZ} = \emptyset$.
-However, R_BYZ is not used since there are not specific constraints for byzantine. 
-Maybe it can be simplified in some cases.
+$R is the set of Validators.
+$R^{OK}$ is non-byzantine set. As default, the first M nodes. 
 */
 set R := 1..N;
 set R_OK := 1..M;
-#set R_BYZ := M..N;
 
 /* View $v$ from set of possible views $V$ 
 Thus, in this model, number of views is limited to the number of consensus nodes $N$.
