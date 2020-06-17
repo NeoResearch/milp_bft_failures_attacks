@@ -4,8 +4,8 @@ import os.path
 
 file_name = sys.argv[1]
 
-m = Model()
-m = Model(sense=mip.MAXIMIZE,solver_name=GUROBI) # use GRB for Gurobi
+m = Model(solver_name=GUROBI)
+#m = Model(sense=mip.MAXIMIZE) # use GRB for Gurobi
 m.SearchEmphasis = 2
 m.max_gap = 0.05
 
