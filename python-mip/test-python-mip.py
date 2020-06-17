@@ -4,10 +4,10 @@ import os.path
 
 file_name = sys.argv[1]
 
-m = Model(solver_name=GUROBI)
 #m = Model(sense=mip.MAXIMIZE) # use GRB for Gurobi
+m = Model(solver_name=GUROBI)
 m.SearchEmphasis = 2
-m.max_gap = 0.05
+m.max_gap = 0.005
 
 m.read(file_name)
 print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_rows, m.num_nz))

@@ -30,6 +30,7 @@ var SendPrepRes{T,R,V}, binary;
 var SendCommit{T,R,V}, binary;
 var SendCV{T,R,V}, binary;
 var BlockRelay{T,R,V}, binary;
+var blockRelayed{V}, binary;
 /* RecvPrepReq{14,1,2,3} sinalizes that the node 1 has received a prepere_request from the node 2 during the view 3  */
 var RecvPrepReq{T,R,R,V}, binary;
 var RecvPrepResp{T,R,R,V}, binary;
@@ -43,7 +44,6 @@ var RecvCV{T,R,R,V}, binary;
 var totalBlockRelayed;
 var lastRelayedBlock, integer, >= 0;
 var numberOfRounds, integer, >= 0;
-var blockRelayed{V}, binary;
 var prepReqSendPerNodeAndView{R,V}, integer, >= 0;
 var prepRespSendPerNodeAndView{R,V}, integer, >= 0;
 var commitSendPerNodeAndView{R,V}, integer, >= 0;
@@ -120,6 +120,8 @@ receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
 /* ============== Block relay constraints ============== */
 blockRelayOptionallyOnlyIfEnoughCommits{t in T, i in R, v in V: t>1}: BlockRelay[t, i, v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvCommit[t2,i,j,v])/M;
 blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
+blockRelayedOnlyIfNodeRelay{v in V}: blockRelayed[v] <= sum{t in T} sum{i in R} BlockRelay[t, i, v];
+blockRelayedCounterFOoced{v in V}: blockRelayed[v]*N >= sum{t in T} sum{i in R} BlockRelay[t, i, v];
 /* ============== Block relay constraints finished ============== */
 
 /* ============== HONEST NODES CONSTRAINTS ==============*/
@@ -193,8 +195,6 @@ noCommitOldViewsYesCV     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,
 /* ============== HONEST NODES CONSTRAINTS ==============*/
 
 /* ============== Calculation of auxiliary variables ============== */
-calcIfBlockRelayedOnView{v in V}: blockRelayed[v] <= sum{t in T} sum{i in R} BlockRelay[t, i, v];
-calcIfBlockRelayedOnView2{v in V}: blockRelayed[v]*tMax*N >= sum{t in T} sum{i in R} BlockRelay[t, i, v];
 calcSumBlockRelayed: totalBlockRelayed = sum{v in V} blockRelayed[v];
 calcTotalPrimaries: numberOfRounds = sum{i in R} sum{v in V} Primary[i,v];
 calcPrepReqSendEveryNodeAndView{i in R, v in V}: prepReqSendPerNodeAndView[i,v] = sum{t in T} SendPrepReq[t,i,v]*t;
@@ -214,7 +214,7 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 #minimize obj: totalBlockRelayed;
 minimize obj: totalBlockRelayed*1000 + numberOfRounds*100;
 #maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
-#maximize obj: totalBlockRelayed*1000 + numberOfRounds; 
+#maximize obj: totalBlockRelayed*1000 + numberOfRounds;
 # lastRelayedBlock + 
 # + numberOfRounds*-1
 #*1000 + lastRelayedBlock;
