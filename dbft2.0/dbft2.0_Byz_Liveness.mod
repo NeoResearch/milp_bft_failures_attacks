@@ -186,9 +186,10 @@ sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
 # Send CV if not ReceivedPrepReq
-#assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]);
 assertSendCVIfNotSendCommitV1 {i in R_OK}:   sum{t in T: t>1}              SendCV[t,i,1] >= 1 - sum{t in T: t>1} SendCommit[t,i,1];
-assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t,i,v-1] - (1 - sum{ii in R} Primary[ii,v-1]);
+assertSendCVIfNotCommitAndYesPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t,i,v-1] - (1 - sum{ii in R} Primary[ii,v-1]);
+# The following four constraints may soon be excluded - Where used on old tests
+#assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]);
 #assertSendCVIfNotEnoughPrepResV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvPrepResp[t,i,j,1]);
 #assertSendCVIfNotEnoughCommitsV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvCommit[t,i,j,1]);
 #assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,v] - (sum{t in T: t>1} SendCommit[t, i,v-1]) - (1 - sum{ii in R} Primary[ii,v-1]);
