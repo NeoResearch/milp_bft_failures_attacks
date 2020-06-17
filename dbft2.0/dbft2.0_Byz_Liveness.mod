@@ -23,7 +23,8 @@ param tMax;
 set T := 1..tMax;
 
 /* =================== */
-/* {DECISION VARIABLES */
+/* DECISION VARIABLES */
+/* ==================== */
 var Primary{R,V}, binary;
 var SendPrepReq{T,R,V}, binary;
 var SendPrepRes{T,R,V}, binary;
@@ -36,11 +37,13 @@ var RecvPrepReq{T,R,R,V}, binary;
 var RecvPrepResp{T,R,R,V}, binary;
 var RecvCommit{T,R,R,V}, binary;
 var RecvCV{T,R,R,V}, binary;
-/* DECISION VARIABLES} */
+/* ==================== */
+/* DECISION VARIABLES */
 /* ================== */
 
 /* ==================== */
 /* {AUXILIARY VARIABLES */
+/* ==================== */
 var totalBlockRelayed;
 var lastRelayedBlock, integer, >= 0;
 var numberOfRounds, integer, >= 0;
@@ -53,12 +56,15 @@ var prepRespRecvPerNodeAndView{R,V}, integer, >= 0;
 var changeViewRecvPerNodeAndView{R,V}, integer, >= 0;
 var commitRecvPerNodeAndView{R,V}, integer, >= 0;
 var blockRelayPerNodeAndView{R,V}, integer, >= 0;
-/* AUXILIARY VARIABLES} */
+/* ==================== */
+/* AUXILIARY VARIABLES */
 /* =================== */
 
 s.t.
 
+/* ==================== */
 /* Time zero constraints: */
+/* ==================== */
 initializeSendPrepareReq{i in R, v in V}: SendPrepReq[1, i, v] = 0;
 initializeRecvPrepareReq{i in R, j in R, v in V}: RecvPrepReq[1, i, j, v] = 0;
 initializeSendPrepareResp{i in R, v in V}: SendPrepRes[1, i, v] = 0;
@@ -68,8 +74,13 @@ initializeRecvCommit{i in R, j in R, v in V}: RecvCommit[1, i, j, v] = 0;
 initializeSendChangeView{i in R, v in V}: SendCV[1, i, v] = 0;
 initializeRecvCV{i in R, j in R, v in V}: RecvCV[1, i, j, v] = 0;
 initializeBlockRelay{i in R, v in V}: BlockRelay[1, i, v] = 0;
+/* ==================== */
+/* Time zero constraints: */
+/* ==================== */
 
-/* ============== Primary constraints ============== */
+/* ==================== */
+/* Primary constraints */
+/* ==================== */
 # Consensus should start on the first round
 consensusShouldStart: sum{i in R} Primary[i,1] = 1;
 singlePrimaryEveryView{v in V}: sum{i in R} Primary[i,v] <= 1;
@@ -80,9 +91,13 @@ avoidJumpingViews{v in V: v>1}: sum{i in R} Primary[i,v]*(v-1) <= sum{v2 in V:v2
 /* You should proof you have certificates to be the Primary, 
 proof the changeviews message records of previous view*/
 nextPrimaryOnlyIfEnoughCV{i in R, v in V: v>1}: Primary[i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
-/* ============== Primary constraints ============== */
+/* ==================== */
+/* Primary constraints */
+/* ==================== */
 
-/* ============== Prepare request constraints ============== */
+/* ==================== */
+/* Prepare Request (PrepReq) constraints */
+/* ==================== */
 # --------- General comments -------------
 # Ensure single PreReq and discard any other except from Primary
 # PrepRequest Received instantaneously when Self Sended (SS)
@@ -92,39 +107,59 @@ prepReqOnlyOnceAndSentOptionally{i in R, v in V}: sum{t in T} SendPrepReq[t,i,v]
 prepReqReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepReq[t,i,i,v] = SendPrepReq[t,i,v];
 prepReqReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepReq[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendPrepReq[t2,j,v];
 prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepReq[t,i,j,v] <= 1;
-/* ============== Prepare request constraints finished ==============*/
+/* ==================== */
+/* Prepare Request (PrepReq) constraints */
+/* ==================== */
 
-/* ============== Prepare response constraints ==============*/
+/* ==================== */
+/* Prepare Response (PreRes) constraints */
+/* ==================== */
 sendPrepResonseOnlyOnce{i in R, v in V}: sum{t in T} SendPrepRes[t,i,v] <= 1;
 prepRespSendOptionally{t in T, i in R, v in V: t>1}: SendPrepRes[t,i,v] <= sum{t2 in T:t2<=t} sum{j in R} RecvPrepReq[t2,i,j,v];
 prepRespReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepResp[t,i,i,v] = SendPrepRes[t,i,v];
 prepRespReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepResp[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendPrepRes[t2,j,v];
 receivedPrepResponseOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepResp[t,i,j,v] <= 1;
-/* ============== Prepare response constraints finished ==============*/
+/* ==================== */
+/* Prepare Response (PreRes) constraints */
+/* ==================== */
 
-/* ============== Commit constraints ============== */
+/* ==================== */
+/* Commit constraints */
+/* ==================== */
 sendCommitOnlyOnce{i in R, v in V}: sum{t in T} SendCommit[t,i,v] <= 1;
 commitSentIfMPrepRespOptionally{t in T, i in R, v in V: t>1}: SendCommit[t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[t2,i,j,v])/M;
 commitReceivedSS{t in T, i in R, v in V: t>1}: RecvCommit[t,i,i,v] = SendCommit[t,i,v];
 commitReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCommit[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendCommit[t2,j,v];
 receivedCommitOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCommit[t,i,j,v] <= 1;
-/* ============== Commit constraints ============== */
+/* ==================== */
+/* Commit constraints */
+/* ==================== */
 
-/* ============== Change view constraints ============== */
+/* ==================== */
+/* Change View (CV) constraints */
+/* ==================== */
 sendCVOnlyOncePerView{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
 receivedCVSS{t in T, i in R, v in V: t>1}: RecvCV[t,i,i,v] = SendCV[t,i,v];
 receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendCV[t2,j,v];
 receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
-/* ============== Change view constraints finished ============== */
+/* ==================== */
+/* Change View (CV) constraints */
+/* ==================== */
 
-/* ============== Block relay constraints ============== */
+/* ==================== */
+/* Block Relay constraints */
+/* ==================== */
 blockRelayOptionallyOnlyIfEnoughCommits{t in T, i in R, v in V: t>1}: BlockRelay[t, i, v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvCommit[t2,i,j,v])/M;
 blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
 blockRelayedOnlyIfNodeRelay{v in V}: blockRelayed[v] <= sum{t in T} sum{i in R} BlockRelay[t, i, v];
-blockRelayedCounterFOoced{v in V}: blockRelayed[v]*N >= sum{t in T} sum{i in R} BlockRelay[t, i, v];
-/* ============== Block relay constraints finished ============== */
+blockRelayedCounterForced{v in V}: blockRelayed[v]*N >= sum{t in T} sum{i in R} BlockRelay[t, i, v];
+/* ==================== */
+/* Block Relay constraints */
+/* ==================== */
 
-/* ============== HONEST NODES CONSTRAINTS ==============*/
+/* ==================== */
+/* HONEST NODE CONSTRAINTS */
+/* ==================== */
 /* ----- Force nodes to receive if comes from Honest --- */
 /* We assume that messages will arrive within the simulation limits for NonByz*/
 /* If all three are enabled together they force 1 block as minimum
@@ -167,7 +202,6 @@ assertSendCVWithCommitAndPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendC
 #assertSendCVIfNotRecvPrepReq  {i in R_OK, v in V: v>1}: sum{t in T} SendCV[t,i,v] >= (1 - (sum{j in R} sum{t in T} RecvPrepReq[t,i,j,v])) - (1 - sum{ii in R} Primary[ii,v-1]) - ; 
 # Mayber other asserts should be included here
 
-/* HONEST NODES CONSTRAINTS */
 # Even non byzantine. However, it was interesting observed that it could happen if R_OK on blockRelayLimitToOneForNonByz
 blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
 
@@ -192,9 +226,13 @@ noCommitOldViewsYesPrepReq{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq
 noCommitOldViewsYesPrepRes{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesCommit {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
 noCommitOldViewsYesCV     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= 1 - sum{t in T: t>1} sum{v2 in V: v2<v} SendCommit[t,i,v2];
-/* ============== HONEST NODES CONSTRAINTS ==============*/
+/* ==================== */
+/* HONEST NODE CONSTRAINTS */
+/* ==================== */
 
-/* ============== Calculation of auxiliary variables ============== */
+/* ==================== */
+/* CALCULATION OF AUXILIARY VARIABLES */
+/* ==================== */
 calcSumBlockRelayed: totalBlockRelayed = sum{v in V} blockRelayed[v];
 calcTotalPrimaries: numberOfRounds = sum{i in R} sum{v in V} Primary[i,v];
 calcPrepReqSendEveryNodeAndView{i in R, v in V}: prepReqSendPerNodeAndView[i,v] = sum{t in T} SendPrepReq[t,i,v]*t;
@@ -208,9 +246,13 @@ calcCommitEveryNodeAndView{i in R, v in V}: commitRecvPerNodeAndView[i,v] = (sum
 calcChangeViewEveryNodeAndView{i in R, v in V}: changeViewRecvPerNodeAndView[i,v] = (sum{j in R} sum{t in T} RecvCV[t,i,j,v]);
 # Generation for maximization
 calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-1)*tMax*BlockRelay[t,i,v] + BlockRelay[t,i,v]*t);
-/* ============== Calculation of auxiliary variables finished ============== */
+/* ==================== */
+/* CALCULATION OF AUXILIARY VARIABLES */
+/* ==================== */
 
-/* ============== Obj Function ============== */
+/* ==================== */
+/* OBJ FUNCTION */
+/* ==================== */
 #minimize obj: totalBlockRelayed;
 minimize obj: totalBlockRelayed*1000 + numberOfRounds*100;
 #maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
@@ -219,4 +261,6 @@ minimize obj: totalBlockRelayed*1000 + numberOfRounds*100;
 # + numberOfRounds*-1
 #*1000 + lastRelayedBlock;
 #maximize obj: totalBlockRelayed * 100 + lastRelayedBlock +  sum{i in R} sum{v in V} changeViewRecvPerNodeAndView[i,v];
-/* ============== Obj Function finished ============== */
+/* ==================== */
+/* OBJ FUNCTION */
+/* ==================== */
