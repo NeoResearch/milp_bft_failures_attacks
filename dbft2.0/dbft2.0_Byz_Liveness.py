@@ -566,18 +566,54 @@ m.verbose = 1
 print("model now has %d variables and %d constraints" % (m.num_cols, m.num_rows))
 
 status = m.optimize(max_seconds=600)
-
-#if Primary[1, 5].xn(1)  >= 0.99 
-
+		
+			
 if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
     print('\nsolution:')
     for v in m.vars:
        if abs(v.x) > 1e-6: # only printing non-zeros
           print('{} : {}'.format(v.name, v.x))
 
+print('\n\n========= DETAILED SOLUTION =========')
+for v in V:
+	print('VIEW {}'.format(v))
+	for i in R:
+		print('\tValidator {}'.format(i))
+		if Primary[i, v]  >= 0.99:
+			print('\t\tPRIMARY')
+		else:
+			print('\t\tBACKUP')
+		for t in T:
+			if SendPrepReq[t, i, v]  >= 0.99:
+				print('\t\t\t{} SendPrepReq in {} at {}'.format(i, t, v))
+			for j in R:
+				if RecvPrepReq[t, i, j, v]  >= 0.99:
+					print('\t\t\t\t{} RecvPrepReq in {} from {} at {}'.format(i, t, j, v))				
+			if SendPrepRes[t, i, v]  >= 0.99:
+				print('\t\t\t{} SendPrepRes in {} at {}'.format(i, t, v))
+			for j in R:
+				if RecvPrepResp[t, i, j, v]  >= 0.99:
+					print('\t\t\t\t{} RecvPrepResp in {} from {} at {}'.format(i, t, j, v))					
+			if SendCommit[t, i, v]  >= 0.99:
+				print('\t\t\t{} SendCommit in {} at {}'.format(i, t, v))
+			for j in R:					
+				if RecvCommit[t, i, j, v]  >= 0.99:
+					print('\t\t\t\t{} RecvCommit in {} from {} at {}'.format(i, t, j, v))					
+			if SendCV[t, i, v]  >= 0.99:
+				print('\t\t\t{} SendCV in {} at {}'.format(i, t, v))
+			for j in R:					
+				if RecvCV[t, i, j, v]  >= 0.99:
+					print('\t\t\t\t{} RecvCV in {} from {} at {}'.format(i, t, j, v))										
+			if BlockRelay[t, i, v]  >= 0.99:
+				print('\t\t\t{} BlockRelay in {} at {}'.format(i, t, v))				
+print('========= DETAILED SOLUTION =========\n\n')
+																		
+			
 if status == OptimizationStatus.OPTIMAL:
     print('optimal solution cost {} found'.format(m.objective_value))
 elif status == OptimizationStatus.FEASIBLE:
     print('sol.cost {} found, best possible: {}'.format(m.objective_value, m.objective_bound))
 elif status == OptimizationStatus.NO_SOLUTION_FOUND:
     print('no feasible solution found, upper bound is: {}'.format(m.objective_bound))          
+    
+    
