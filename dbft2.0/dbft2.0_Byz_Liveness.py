@@ -8,6 +8,8 @@ f = int((N-1)/3)
 M = 2*f+1
 tMax = 8
 
+print('Total Number of Nodes is N={}, with f={} and honest M={} and tMax={}\n'.format(N, f, M,tMax))          
+    
 # custom data can be loaded here
 
 R = set(range(1, N + 1))
@@ -15,6 +17,8 @@ R_OK = set(range(1, M + 1))
 V = set(range(1, N + 1))
 T = set(range(1, tMax + 1))
 
+
+    
 m = Model()
 m.SearchEmphasis = 2
 m.max_gap = 0.005
@@ -76,44 +80,44 @@ Auxiliary Variables
 """
 totalBlockRelayed = m.add_var("totalBlockRelayed", var_type=INTEGER)
 blockRelayed = {v: m.add_var("blockRelayed(%s)" % v, var_type=BINARY) for v in V}
-lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
+#lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
 numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
-prepReqSendPerNodeAndView = {
-    (r, v): m.add_var("prepReqSendPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+changeViewRecvPerNodeAndView = {
+    (r, v): m.add_var("changeViewRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
+    for (r, v) in product(R, V)
+}
+'''prepReqSendPerNodeAndView = {
+    (r, v): m.add_var("prepReqSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 prepRespSendPerNodeAndView = {
-    (r, v): m.add_var("prepRespSendPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("prepRespSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 commitSendPerNodeAndView = {
-    (r, v): m.add_var("commitSendPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("commitSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 changeViewSendPerNodeAndView = {
-    (r, v): m.add_var("changeViewSendPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("changeViewSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 prepReqRecvPerNodeAndView = {
-    (r, v): m.add_var("prepReqRecvPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("prepReqRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 prepRespRecvPerNodeAndView = {
-    (r, v): m.add_var("prepRespRecvPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-changeViewRecvPerNodeAndView = {
-    (r, v): m.add_var("changeViewRecvPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("prepRespRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 commitRecvPerNodeAndView = {
-    (r, v): m.add_var("commitRecvPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("commitRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
 blockRelayPerNodeAndView = {
-    (r, v): m.add_var("blockRelayPerNodeAndView(%d,%d)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var("blockRelayPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
-}
+}'''
 
 """
 Time zero constraints
@@ -121,14 +125,14 @@ Time zero constraints
 """
 for (i, v) in product(R, V):
     m += SendPrepReq[(1, i, v)] == 0, "initSendPrepReq(%s,%s)" % (i, v)
-    m += SendPrepRes[1, i, v] == 0, "initSendPrepRes(%d,%d)" % (i, v)
+    m += SendPrepRes[1, i, v] == 0, "initSendPrepRes(%s,%s)" % (i, v)
     m += SendCommit[1, i, v] == 0, "initSendCommit(%s,%s)" % (i, v)
     m += SendCV[1, i, v] == 0, "initSendCV(%s,%s)" % (i, v)
     m += BlockRelay[1, i, v] == 0, "initBlockRelay(%s,%s)" % (i, v)
 
 for (i, j, v) in product(R, R, V):
     m += RecvPrepReq[(1, i, j, v)] == 0, "initRecvPrepReq(%s,%s,%s)" % (i, j, v)
-    m += RecvPrepResp[1, i, j, v] == 0, "initRecvPrepRes(%s,%s,%d)" % (i, j, v)
+    m += RecvPrepResp[1, i, j, v] == 0, "initRecvPrepRes(%s,%s,%s)" % (i, j, v)
     m += RecvCommit[1, i, j, v] == 0, "initRecvCommit(%s,%s, %s)" % (i, j, v)
     m += RecvCV[1, i, j, v] == 0, "initRecvCV(%s,%s,%s)" % (i, j, v)   
 
@@ -158,7 +162,7 @@ for v in V - {1}:
 # proof the changeviews message records of previous view*/
 for (i, v) in product(R, V - {1}):
     m += (
-        Primary[i, v] <= changeViewRecvPerNodeAndView[i, v - 1] / M,
+        Primary[i, v] <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
         "nextPrimaryOnlyIfEnoughCV(%s,%s)" % (i, v),
     )
 
@@ -243,7 +247,7 @@ for (t, i, j, v) in product(T - {1}, R, R, V):
                 RecvPrepReq[t, i, j, v]
                 <= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t),
             ),
-            "prepReqReceived(%s,%s,%s,%d)" % (t, i, j, v),
+            "prepReqReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
         m += (
             (
@@ -257,7 +261,7 @@ for (t, i, j, v) in product(T - {1}, R, R, V):
                 RecvCommit[t, i, j, v]
                 <= xsum(SendCommit[t2, j, v] for t2 in T if 1 < t2 < t),
             ),
-            "commitReceived(%s,%s,%s,%d)" % (t, i, j, v),
+            "commitReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
         m += (
             (
@@ -273,7 +277,7 @@ for (t, i, j, v) in product(T - {1}, R, R, V):
          (
             RecvPrepResp[t, i, j, v]
             >= RecvPrepReq[t, i, j, v],
-          ),
+         ),
          "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
     )  
 
