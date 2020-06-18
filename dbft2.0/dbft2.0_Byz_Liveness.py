@@ -554,8 +554,7 @@ m.verbose = 1
 #
 #          ]
 
-print("model now has %d variables and %d constraints" %
-      (m.num_cols, m.num_rows))
+print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_rows, m.num_nz))
 
 m.write('a.lp')
 
