@@ -473,43 +473,43 @@ for (i, v) in product(R_OK, V - {1}):
     # LINKS BlockRelayed and LIMITS in past views
     m += (
         Primary[i, v]
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noBlockOldViewsYesPrimary(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendPrepReq[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noBlockOldViewsYesPrepReq(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendPrepRes[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noBlockOldViewsYesPrepRes(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendCommit[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noBlockOldViewsYesCommit(%s,%s)" % (i, v),
     )
     # LINKS Commit and LIMITS in past views
     m += (
         xsum(SendPrepReq[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noCommitOldViewsYesPrepReq(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendPrepRes[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noCommitOldViewsYesPrepRes(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendCommit[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noCommitOldViewsYesCommit(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if 1 < v2 < v),
+        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noCommitOldViewsYesCV(%s,%s)" % (i, v),
     )
 
