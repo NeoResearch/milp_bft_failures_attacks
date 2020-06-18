@@ -565,6 +565,8 @@ m.verbose = 1
 
 print("model now has %d variables and %d constraints" % (m.num_cols, m.num_rows))
 
+m.write('a.lp') 
+ 
 status = m.optimize(max_seconds=600)
 		
 			
@@ -579,32 +581,32 @@ for v in V:
 	print('VIEW {}'.format(v))
 	for i in R:
 		print('\tValidator {}'.format(i))
-		if Primary[i, v]  >= 0.99:
+		if Primary[i, v].x  >= 0.99:
 			print('\t\tPRIMARY')
 		else:
 			print('\t\tBACKUP')
 		for t in T:
-			if SendPrepReq[t, i, v]  >= 0.99:
+			if SendPrepReq[t, i, v].x  >= 0.99:
 				print('\t\t\t{} SendPrepReq in {} at {}'.format(i, t, v))
 			for j in R:
-				if RecvPrepReq[t, i, j, v]  >= 0.99:
+				if RecvPrepReq[t, i, j, v].x  >= 0.99:
 					print('\t\t\t\t{} RecvPrepReq in {} from {} at {}'.format(i, t, j, v))				
-			if SendPrepRes[t, i, v]  >= 0.99:
+			if SendPrepRes[t, i, v].x  >= 0.99:
 				print('\t\t\t{} SendPrepRes in {} at {}'.format(i, t, v))
 			for j in R:
-				if RecvPrepResp[t, i, j, v]  >= 0.99:
+				if RecvPrepResp[t, i, j, v].x  >= 0.99:
 					print('\t\t\t\t{} RecvPrepResp in {} from {} at {}'.format(i, t, j, v))					
-			if SendCommit[t, i, v]  >= 0.99:
+			if SendCommit[t, i, v].x  >= 0.99:
 				print('\t\t\t{} SendCommit in {} at {}'.format(i, t, v))
 			for j in R:					
-				if RecvCommit[t, i, j, v]  >= 0.99:
+				if RecvCommit[t, i, j, v].x  >= 0.99:
 					print('\t\t\t\t{} RecvCommit in {} from {} at {}'.format(i, t, j, v))					
-			if SendCV[t, i, v]  >= 0.99:
+			if SendCV[t, i, v].x  >= 0.99:
 				print('\t\t\t{} SendCV in {} at {}'.format(i, t, v))
 			for j in R:					
-				if RecvCV[t, i, j, v]  >= 0.99:
+				if RecvCV[t, i, j, v].x  >= 0.99:
 					print('\t\t\t\t{} RecvCV in {} from {} at {}'.format(i, t, j, v))										
-			if BlockRelay[t, i, v]  >= 0.99:
+			if BlockRelay[t, i, v].x  >= 0.99:
 				print('\t\t\t{} BlockRelay in {} at {}'.format(i, t, v))				
 print('========= DETAILED SOLUTION =========\n\n')
 																		
