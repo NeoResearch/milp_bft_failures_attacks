@@ -362,7 +362,7 @@ for i in R_OK:
 # Force a Primary to exist if any honest knows change views - 2 acts as BIGNUM
 for (i, v) in product(R_OK, V - {1}):
     m += (
-        xsum(Primary[ii, v] for ii in R) * 2
+        xsum(2 * Primary[ii, v] for ii in R)
         >= changeViewRecvPerNodeAndView[i, v - 1] - M + 1,
         "assertAtLeastOnePrimaryIfEnoughCV(%s,%s)" % (i, v),
     )
@@ -395,22 +395,22 @@ for (i, v) in product(R_OK, V):
 for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendPrepReq[t, i, v] for t in T - {1}) 
-        <= changeViewRecvPerNodeAndView[i, v - 1] / M,
+        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
         "sendPrepReqOnlyIfViewBeforeOk(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendPrepRes[t, i, v] for t in T - {1}) 
-        <= changeViewRecvPerNodeAndView[i, v - 1] / M,
+        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
         "sendPrepResOnlyIfViewBeforeOk(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendCommit[t, i, v] for t in T - {1}) 
-        <= changeViewRecvPerNodeAndView[i, v - 1] / M,
+        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
         "sendCommitOnlyIfViewBeforeOk(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendCV[t, i, v] for t in T - {1}) 
-        <= changeViewRecvPerNodeAndView[i, v - 1] / M,
+        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
         "sendCVOnlyIfViewBeforeOk(%s,%s)" % (i, v),
     )            
 
@@ -426,7 +426,7 @@ for i in R_OK:
 for (i, v) in product(R_OK, V - {1}):    
     m += (
         xsum(SendCV[t, i, v] for t in T - {1}) 
-        >= 1 - xsum(SendCommit[t, i, v - 1] for t in T - {1}) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
+        >= (1 - xsum(SendCommit[t, i, v - 1] for t in T - {1})) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
         "assertSendCVIfNotCommitAndYesPrimary(%s,%s)" % (i, v),
     )
 
@@ -530,14 +530,14 @@ m += (
     )
 
 m += (
-        numberOfRounds == xsum(Primary[i, v] for (i, v) in product(R,V)),
+        numberOfRounds == xsum(Primary[i, v] for (i, v) in product(R, V)),
         "calcTotalPrimaries",
     )
 
 for (i, v) in product(R, V):
     m += (
         changeViewRecvPerNodeAndView[i, v]
-        == xsum(RecvCV[t, i, j, v] for t in T for j in R),
+        == xsum(RecvCV[t, i, j, v] for (t, j) in product(T, R)),
         "calcChangeViewEveryNodeAndView(%s,%s)" % (i, v),
     )  
 
@@ -547,10 +547,10 @@ OBJ FUNCTION
 """
 
 # For Minimization
-m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+#m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
 
 # For Maximization
-# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds);
+m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds);
 
 m.verbose = 1
 
