@@ -16,9 +16,8 @@ R = set(range(1, N + 1))
 R_OK = set(range(1, M + 1))
 V = set(range(1, N + 1))
 T = set(range(1, tMax + 1))
-
-
     
+# Create Model
 m = Model()
 m.SearchEmphasis = 2
 m.max_gap = 0.005
@@ -28,50 +27,50 @@ Decision variables
 ==================
 """
 Primary = {
-    (r, v): m.add_var("Primary(%s,%s)" % (r, v), var_type=BINARY)
-    for (r, v) in product(R, V)
+    (i, v): m.add_var("Primary(%s,%s)" % (i, v), var_type=BINARY)
+    for (i, v) in product(R, V)
 }
 SendPrepReq = {
-    (t, r, v): m.add_var("SendPrepReq(%s,%s,%s)" % (t, r, v), var_type=BINARY)
-    for (t, r, v) in product(T, R, V)
+    (t, i, v): m.add_var("SendPrepReq(%s,%s,%s)" % (t, i, v), var_type=BINARY)
+    for (t, i, v) in product(T, R, V)
 }
 SendPrepRes = {
-    (t, r, v): m.add_var("SendPrepRes(%s,%s,%s)" % (t, r, v), var_type=BINARY)
-    for (t, r, v) in product(T, R, V)
+    (t, i, v): m.add_var("SendPrepRes(%s,%s,%s)" % (t, i, v), var_type=BINARY)
+    for (t, i, v) in product(T, R, V)
 }
 SendCommit = {
-    (t, r, v): m.add_var("SendCommit(%s,%s,%s)" % (t, r, v), var_type=BINARY)
-    for (t, r, v) in product(T, R, V)
+    (t, i, v): m.add_var("SendCommit(%s,%s,%s)" % (t, i, v), var_type=BINARY)
+    for (t, i, v) in product(T, R, V)
 }
 SendCV = {
-    (t, r, v): m.add_var("SendCV(%s,%s,%s)" % (t, r, v), var_type=BINARY)
-    for (t, r, v) in product(T, R, V)
+    (t, i, v): m.add_var("SendCV(%s,%s,%s)" % (t, i, v), var_type=BINARY)
+    for (t, i, v) in product(T, R, V)
 }
 BlockRelay = {
-    (t, r, v): m.add_var("BlockRelay(%s,%s,%s)" % (t, r, v), var_type=BINARY)
-    for (t, r, v) in product(T, R, V)
+    (t, i, v): m.add_var("BlockRelay(%s,%s,%s)" % (t, i, v), var_type=BINARY)
+    for (t, i, v) in product(T, R, V)
 }
 RecvPrepReq = {
-    (t, r1, r2, v): m.add_var(
-        "RecvPrepReq(%s,%s,%s,%s)" % (t, r1, r2, v), var_type=BINARY
+    (t, i, j, v): m.add_var(
+        "RecvPrepReq(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY
     )
-    for (t, r1, r2, v) in product(T, R, R, V)
+    for (t, i, j, v) in product(T, R, R, V)
 }
 RecvPrepResp = {
-    (t, r1, r2, v): m.add_var(
-        "RecvPrepResp(%s,%s,%s,%s)" % (t, r1, r2, v), var_type=BINARY,
+    (t, i, j, v): m.add_var(
+        "RecvPrepResp(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY,
     )
-    for (t, r1, r2, v) in product(T, R, R, V)
+    for (t, i, j, v) in product(T, R, R, V)
 }
 RecvCommit = {
-    (t, r1, r2, v): m.add_var(
-        "RecvCommit(%s,%s,%s,%s)" % (t, r1, r2, v), var_type=BINARY
+    (t, i, j, v): m.add_var(
+        "RecvCommit(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY
     )
-    for (t, r1, r2, v) in product(T, R, R, V)
+    for (t, i, j, v) in product(T, R, R, V)
 }
 RecvCV = {
-    (t, r1, r2, v): m.add_var("RecvCV(%s,%s,%s,%s)" % (t, r1, r2, v), var_type=BINARY)
-    for (t, r1, r2, v) in product(T, R, R, V)
+    (t, i, j, v): m.add_var("RecvCV(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY)
+    for (t, i, j, v) in product(T, R, R, V)
 }
 
 """
