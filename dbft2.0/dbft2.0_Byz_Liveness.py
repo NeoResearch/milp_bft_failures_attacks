@@ -223,16 +223,16 @@ for (t, i, v) in product(T - {1}, R, V):
         "prepReqReceivedSS(%s,%s,%s)" % (t, i, v),
     )
     m += (
-        (RecvPrepResp[t, i, i, v] == SendPrepRes[t, i, v]),
+        RecvPrepResp[t, i, i, v] == SendPrepRes[t, i, v],
         "prepRespReceivedSS(%s,%s,%s)" % (t, i, v),
     )
     m += (
-        (RecvCommit[t, i, i, v] == SendCommit[t, i, v]),
+        RecvCommit[t, i, i, v] == SendCommit[t, i, v],
         "commitReceivedSS(%s,%s,%s)" % (t, i, v),
     )
     m += (
-        (RecvCV[t, i, i, v] == SendCV[t, i, v]),
-        "receivedCVSS(%s,%s,%s)" % (t, i, v),
+        RecvCV[t, i, i, v] == SendCV[t, i, v],
+        "cvReceivedSS(%s,%s,%s)" % (t, i, v),
     ) 
 
 # Sended by another node J will lag, at least, one interval `t`
@@ -272,7 +272,7 @@ for (t, i, j, v) in product(T - {1}, R, R, V):
     m += (
          (
             RecvPrepResp[t, i, j, v]
-            >= RecvPrepResp[t, i, j, v],
+            >= RecvPrepReq[t, i, j, v],
           ),
          "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
     )  
