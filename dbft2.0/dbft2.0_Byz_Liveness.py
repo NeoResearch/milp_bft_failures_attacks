@@ -1,6 +1,5 @@
-!pip install mip
 from itertools import product
-from mip import Model, BINARY, INTEGER, xsum, OptimizationStatus, MAXIMIZE
+from mip import Model, BINARY, INTEGER, xsum, OptimizationStatus, maximize, minimize
 # Total number of nodes
 N = 4
 # number of allowed faulty nodes
@@ -175,12 +174,12 @@ for (t, i, v) in product(T - {1}, R, V):
     )
     m += (
         SendCommit[t, i, v]
-        <= xsum(RecvPrepResp[t2, i, j, v] for t2 in T if t2 <= t for j in R) / M,
+        <= (1 / M) * xsum(RecvPrepResp[t2, i, j, v] for t2 in T if t2 <= t for j in R),
         "commitSentIfMPrepRespOptionally(%s,%s,%s)" % (t, i, v),
     )    
     m += (
         BlockRelay[t, i, v]
-        <= xsum(RecvCommit[t2, i, j, v] for t2 in T if t2 <= t for j in R) / M,
+        <= (1 / M) * xsum(RecvCommit[t2, i, j, v] for t2 in T if t2 <= t for j in R),
         "blockRelayOptionallyOnlyIfEnoughCommits(%s,%s,%s)" % (t, i, v),
     )
     
@@ -548,10 +547,10 @@ OBJ FUNCTION
 """
 
 # For Minimization
-# m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
 
 # For Maximization
-m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds);
+# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds);
 
 m.verbose = 1
 
@@ -567,14 +566,15 @@ status = m.optimize(max_seconds=600)
 
 #if Primary[1, 5].xn(1)  >= 0.99 
 
-if status == OptimizationStatus.OPTIMAL:
-    print('optimal solution cost {} found'.format(m.objective_value))
-elif status == OptimizationStatus.FEASIBLE:
-    print('sol.cost {} found, best possible: {}'.format(m.objective_value, m.objective_bound))
-elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-    print('no feasible solution found, upper bound is: {}'.format(m.objective_bound))
 if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
     print('\nsolution:')
     for v in m.vars:
        if abs(v.x) > 1e-6: # only printing non-zeros
           print('{} : {}'.format(v.name, v.x))
+
+if status == OptimizationStatus.OPTIMAL:
+    print('optimal solution cost {} found'.format(m.objective_value))
+elif status == OptimizationStatus.FEASIBLE:
+    print('sol.cost {} found, best possible: {}'.format(m.objective_value, m.objective_bound))
+elif status == OptimizationStatus.NO_SOLUTION_FOUND:
+    print('no feasible solution found, upper bound is: {}'.format(m.objective_bound))          

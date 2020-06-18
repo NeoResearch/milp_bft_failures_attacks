@@ -15,7 +15,7 @@ print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_ro
 mip_start_filename="testToWrite.sol"
 if os.path.isfile(mip_start_filename):
     print('\READING file for possible MIP_START')
-    m.read(mip_start_filename)
+    #m.read(mip_start_filename)
     print('Validating mipstart {}\n\n'.format(m.validate_mip_start()))
 
 status = m.optimize(max_seconds=600)

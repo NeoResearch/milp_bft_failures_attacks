@@ -40,7 +40,7 @@ var RecvCV{T,R,R,V}, binary;
 /* ==================== */
 /* {AUXILIARY VARIABLES */
 /* ==================== */
-var totalBlockRelayed;
+var totalBlockRelayed, integer, >= 0;
 var lastRelayedBlock, integer, >= 0;
 var numberOfRounds, integer, >= 0;
 var prepReqSendPerNodeAndView{R,V}, integer, >= 0;
@@ -99,10 +99,11 @@ nextPrimaryOnlyIfEnoughCV{i in R, v in V: v>1}: Primary[i,v] <= changeViewRecvPe
 # PrepRequest Received instantaneously when Self Sended (SS)
 # Only Recv if it was sended before, otherwise it is infeasible
 # --------- General comments -------------
-prepReqOnlyOnceAndSentOptionally{i in R, v in V}: sum{t in T} SendPrepReq[t,i,v] <= Primary[i,v];
+prepReqOnlyOnceAndSentOptionally{i in R, v in V}: sum{t in T: t>1} SendPrepReq[t,i,v] <= Primary[i,v];
 prepReqReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepReq[t,i,i,v] = SendPrepReq[t,i,v];
 prepReqReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepReq[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendPrepReq[t2,j,v];
-prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepReq[t,i,j,v] <= 1;
+prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T: t>1} RecvPrepReq[t,i,j,v] <= 1;
+prepResReceivedAlongWithPrepReq{t in T, i in R, j in R, v in V: t>1}: RecvPrepResp[t,i,j,v] >= RecvPrepReq[t,i,j,v];
 /* ==================== */
 /* Prepare Request (PrepReq) constraints */
 /* ==================== */
@@ -110,11 +111,11 @@ prepReqReceivedOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepReq[t,i,j,v
 /* ==================== */
 /* Prepare Response (PreRes) constraints */
 /* ==================== */
-sendPrepResonseOnlyOnce{i in R, v in V}: sum{t in T} SendPrepRes[t,i,v] <= 1;
+sendPrepResonseOnlyOnce{i in R, v in V}: sum{t in T: t>1} SendPrepRes[t,i,v] <= 1;
 prepRespSendOptionally{t in T, i in R, v in V: t>1}: SendPrepRes[t,i,v] <= sum{t2 in T:t2<=t} sum{j in R} RecvPrepReq[t2,i,j,v];
 prepRespReceivedSS{t in T, i in R, v in V: t>1}: RecvPrepResp[t,i,i,v] = SendPrepRes[t,i,v];
 prepRespReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvPrepResp[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendPrepRes[t2,j,v];
-receivedPrepResponseOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepResp[t,i,j,v] <= 1;
+receivedPrepResponseOnlyOnce{i in R, j in R, v in V}: sum{t in T: t>1} RecvPrepResp[t,i,j,v] <= 1;
 /* ==================== */
 /* Prepare Response (PreRes) constraints */
 /* ==================== */
@@ -122,11 +123,11 @@ receivedPrepResponseOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvPrepResp[t
 /* ==================== */
 /* Commit constraints */
 /* ==================== */
-sendCommitOnlyOnce{i in R, v in V}: sum{t in T} SendCommit[t,i,v] <= 1;
+sendCommitOnlyOnce{i in R, v in V}: sum{t in T: t>1} SendCommit[t,i,v] <= 1;
 commitSentIfMPrepRespOptionally{t in T, i in R, v in V: t>1}: SendCommit[t,i,v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvPrepResp[t2,i,j,v])/M;
 commitReceivedSS{t in T, i in R, v in V: t>1}: RecvCommit[t,i,i,v] = SendCommit[t,i,v];
 commitReceived{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCommit[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendCommit[t2,j,v];
-receivedCommitOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCommit[t,i,j,v] <= 1;
+receivedCommitOnlyOnce{i in R, j in R, v in V}: sum{t in T: t>1} RecvCommit[t,i,j,v] <= 1;
 /* ==================== */
 /* Commit constraints */
 /* ==================== */
@@ -134,10 +135,10 @@ receivedCommitOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCommit[t,i,j,v] 
 /* ==================== */
 /* Change View (CV) constraints */
 /* ==================== */
-sendCVOnlyOncePerView{i in R, v in V}: sum{t in T} SendCV[t,i,v] <= 1;
+sendCVOnlyOncePerView{i in R, v in V}: sum{t in T: t>1} SendCV[t,i,v] <= 1;
 receivedCVSS{t in T, i in R, v in V: t>1}: RecvCV[t,i,i,v] = SendCV[t,i,v];
 receivedCV{t in T, i in R, j in R, v in V: t>1 and j!=i}: RecvCV[t,i,j,v] <= sum{t2 in T: t2<t and t2>1} SendCV[t2,j,v];
-receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
+receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T: t>1} RecvCV[t,i,j,v] <= 1;
 /* ==================== */
 /* Change View (CV) constraints */
 /* ==================== */
@@ -147,8 +148,8 @@ receivedCVOnlyOnce{i in R, j in R, v in V}: sum{t in T} RecvCV[t,i,j,v] <= 1;
 /* ==================== */
 blockRelayOptionallyOnlyIfEnoughCommits{t in T, i in R, v in V: t>1}: BlockRelay[t, i, v] <= (sum{t2 in T: t2<=t} sum{j in R} RecvCommit[t2,i,j,v])/M;
 blockRelayOnlyOncePerView{i in R, v in V}: sum{t in T} BlockRelay[t,i,v] <= 1;
-blockRelayedOnlyIfNodeRelay{v in V}: blockRelayed[v] <= sum{t in T} sum{i in R} BlockRelay[t, i, v];
-blockRelayedCounterForced{v in V}: blockRelayed[v]*N >= sum{t in T} sum{i in R} BlockRelay[t, i, v];
+blockRelayedOnlyIfNodeRelay{v in V}: blockRelayed[v] <= sum{t in T: t>1} sum{i in R} BlockRelay[t, i, v];
+blockRelayedCounterForced{v in V}: blockRelayed[v]*N >= sum{t in T: t>1} sum{i in R} BlockRelay[t, i, v];
 /* ==================== */
 /* Block Relay constraints */
 /* ==================== */
@@ -171,7 +172,7 @@ cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} Rec
 
 /* Non-byz will not relay more than a single block. 
 Byz can Relay (HOLD) and never arrive */
-blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T} sum{v in V} BlockRelay[t,i,v] <= 1;
+blockRelayLimitToOneForNonByz{i in R_OK}: sum{t in T: t>1} sum{v in V} BlockRelay[t,i,v] <= 1;
 
 /* Force a Primary to exist if any honest knows change views - 2 acts as BIGNUM */
 assertAtLeastOnePrimaryIfEnoughCV{i in R_OK, v in V: v>1}: (sum{ii in R} Primary[ii,v])*2    >= (changeViewRecvPerNodeAndView[i,v-1] - M + 1);
@@ -184,14 +185,14 @@ assertBlockRelayWithinSimLimit   {i in R_OK, v in V}: (sum{t in T: t>1} BlockRel
 
 /* We assume that honest nodes will only perform an action if view change was approved - no view jumps 
 - not tested if really needed */
-sendPrepResOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendPrepReqOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepReq[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
+sendPrepResOnlyIfViewBeforeOk    {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendPrepRes[t,i,v] <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendCommitOnlyIfViewBeforeOk     {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCommit[t,i,v]  <= changeViewRecvPerNodeAndView[i,v-1]/M;
 sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v]      <= changeViewRecvPerNodeAndView[i,v-1]/M;
 
 /* Assert Non-byz to SendCV every round, if commit not achieved 
 After first round we need to ensure circular behavior in order to not force if round is not active */
-assertSendCVIfNotSendCommitV1 {i in R_OK}:   sum{t in T: t>1}              SendCV[t,i,1] >= 1 - sum{t in T: t>1} SendCommit[t,i,1];
+assertSendCVIfNotSendCommitV1 {i in R_OK}:                    sum{t in T: t>1} SendCV[t,i,1] >= 1 - sum{t in T: t>1} SendCommit[t,i,1];
 assertSendCVIfNotCommitAndYesPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t,i,v-1] - (1 - sum{ii in R} Primary[ii,v-1]);
 # The following four constraints may soon be excluded - Where used on old tests
 #assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]);
@@ -251,11 +252,8 @@ calcLastRelayedBlockMaxProblem{t in T, i in R, v in V}: lastRelayedBlock >= ((v-
 #minimize obj: totalBlockRelayed;
 minimize obj: totalBlockRelayed*1000 + numberOfRounds*100;
 #maximize obj: totalBlockRelayed*1000 + lastRelayedBlock*-1; 
-#maximize obj: totalBlockRelayed*1000 + numberOfRounds;
-# lastRelayedBlock + 
-# + numberOfRounds*-1
-#*1000 + lastRelayedBlock;
-#maximize obj: totalBlockRelayed * 100 + lastRelayedBlock +  sum{i in R} sum{v in V} changeViewRecvPerNodeAndView[i,v];
+#maximize obj: totalBlockRelayed*1000 + numberOfRounds*100;
+#maximize obj: totalBlockRelayed*100  + lastRelayedBlock +  sum{i in R} sum{v in V} changeViewRecvPerNodeAndView[i,v];
 /* ==================== */
 /* OBJ FUNCTION */
 /* ==================== */
