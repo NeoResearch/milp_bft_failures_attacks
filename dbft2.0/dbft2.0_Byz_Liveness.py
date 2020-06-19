@@ -80,7 +80,7 @@ Auxiliary Variables
 totalBlockRelayed = m.add_var("totalBlockRelayed", var_type=INTEGER)
 blockRelayed = {v: m.add_var("blockRelayed(%s)" %
                              v, var_type=BINARY) for v in V}
-#lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
+lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
 numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
 changeViewRecvPerNodeAndView = {
     (r, v): m.add_var("changeViewRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
@@ -124,15 +124,14 @@ Time zero constraints
 =====================
 """
 for (i, v) in product(R, V):
-    m += SendPrepReq[(1, i, v)] == 0, "initSendPrepReq(%s,%s)" % (i, v)
+    m += SendPrepReq[1, i, v] == 0, "initSendPrepReq(%s,%s)" % (i, v)
     m += SendPrepRes[1, i, v] == 0, "initSendPrepRes(%s,%s)" % (i, v)
     m += SendCommit[1, i, v] == 0, "initSendCommit(%s,%s)" % (i, v)
     m += SendCV[1, i, v] == 0, "initSendCV(%s,%s)" % (i, v)
     m += BlockRelay[1, i, v] == 0, "initBlockRelay(%s,%s)" % (i, v)
 
 for (i, j, v) in product(R, R, V):
-    m += RecvPrepReq[(1, i, j, v)
-                     ] == 0, "initRecvPrepReq(%s,%s,%s)" % (i, j, v)
+    m += RecvPrepReq[1, i, j, v] == 0, "initRecvPrepReq(%s,%s,%s)" % (i, j, v)
     m += RecvPrepResp[1, i, j, v] == 0, "initRecvPrepRes(%s,%s,%s)" % (i, j, v)
     m += RecvCommit[1, i, j, v] == 0, "initRecvCommit(%s,%s, %s)" % (i, j, v)
     m += RecvCV[1, i, j, v] == 0, "initRecvCV(%s,%s,%s)" % (i, j, v)
@@ -196,7 +195,7 @@ for (i, v) in product(R, V):
     # Note PrepReq deals with Primary, thus, it also ensures single PreReq and discard any other except from Primary
     m += (
         xsum(SendPrepReq[t, i, v] for t in T - {1}) <= Primary[i, v],
-        "prepReqOOJustPrimary(%s,%s)" % (i, v),
+        "prepReqOOIfPrimary(%s,%s)" % (i, v),
     )
     m += (
         xsum(SendPrepRes[t, i, v] for t in T - {1}) <= 1,
@@ -244,30 +243,30 @@ for t, i, j, v in product(T - {1}, R, R, V):
     if i != j:
         m += (
             RecvPrepReq[t, i, j, v]
-            <= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t),            
+            <= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t),
             "prepReqReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
         m += (
             RecvPrepResp[t, i, j, v]
-            <= xsum(SendPrepRes[t2, j, v] for t2 in T if 1 < t2 < t),            
+            <= xsum(SendPrepRes[t2, j, v] for t2 in T if 1 < t2 < t),
             "prepRespReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
         m += (
             RecvCommit[t, i, j, v]
-            <= xsum(SendCommit[t2, j, v] for t2 in T if 1 < t2 < t),            
+            <= xsum(SendCommit[t2, j, v] for t2 in T if 1 < t2 < t),
             "commitReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
         m += (
             RecvCV[t, i, j, v]
-            <= xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 < t),            
+            <= xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 < t),
             "cvReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
 
 # Force the node to Received PrepRes along with PrepReq
 for (t, i, j, v) in product(T - {1}, R, R, V):
     m += (
-             RecvPrepResp[t, i, j, v]
-             >= RecvPrepReq[t, i, j, v],
+        RecvPrepResp[t, i, j, v]
+        >= RecvPrepReq[t, i, j, v],
         "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
     )
 
@@ -420,7 +419,7 @@ for i in R_OK:
 for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
-        >= (1 - xsum(SendCommit[t, i, v - 1] for t in T - {1})) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
+        >= 1 - xsum(SendCommit[t, i, v - 1] for t in T - {1}) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
         "assertSendCVIfNotCommitAndYesPrimary(%s,%s)" % (i, v),
     )
 
@@ -428,44 +427,44 @@ for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     m += (
         SendPrepReq[t, i, v]
-        <= 1 - xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noPrepReqIfCV(%s,%s,%s)" % (i, v, t),
-    )
+    ) 
     m += (
         SendPrepRes[t, i, v]
-        <= 1 - xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noPrepResIfCV(%s,%s,%s)" % (i, v, t),
-    )
+    )  
     m += (
         SendCommit[t, i, v]
-        <= 1 - xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noCommitIfCV(%s,%s,%s)" % (i, v, t),
-    )
+    ) 
     # LINKS Commit and LIMITS - analogous as the constrains for SendCV
     m += (
         SendCV[t, i, v]
-        <= 1 - xsum(SendCommit[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(SendCommit[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noCVIfCommit(%s,%s,%s)" % (i, v, t),
     )
     # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
     m += (
         SendPrepReq[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesPrepReq(%s,%s,%s)" % (i, v, t),
-    )
+    )  
     m += (
         SendPrepRes[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesPrepRes(%s,%s,%s)" % (i, v, t),
-    )
+    ) 
     m += (
         SendCommit[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesCommit(%s,%s,%s)" % (i, v, t),
     )
     m += (
         SendCV[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, j, v] for t2 in T if 1 < t2 <= t),
+        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesCV(%s,%s,%s)" % (i, v, t),
     )
 
@@ -535,16 +534,24 @@ for (i, v) in product(R, V):
         "calcChangeViewEveryNodeAndView(%s,%s)" % (i, v),
     )
 
+for (t, i, v) in product(T, R, V):
+    m += (
+        lastRelayedBlock
+        >= ((v - 1) * tMax * BlockRelay[t, i, v] + BlockRelay[t, i, v] * t),
+        "calcLastRelayedBlockMaxProblem(%s,%s,%s)" % (t, i, v),
+    )
+
 """
 OBJ FUNCTION
 =======================
 """
 
 # For Minimization
-#m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+# m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
 
 # For Maximization
 m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds)
+#m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
 
 m.verbose = 1
 
@@ -554,7 +561,8 @@ m.verbose = 1
 #
 #          ]
 
-print('model has {} vars, {} constraints and {} nzs'.format(m.num_cols, m.num_rows, m.num_nz))
+print('model has {} vars, {} constraints and {} nzs'.format(
+    m.num_cols, m.num_rows, m.num_nz))
 
 m.write('a.lp')
 
@@ -576,32 +584,39 @@ for v in V:
             print('\t\tPRIMARY')
         else:
             print('\t\tBACKUP')
+        countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
             if SendPrepReq[t, i, v].x >= 0.99:
                 print('\t\t\t{} SendPrepReq in {} at {}'.format(i, t, v))
             for j in R:
                 if RecvPrepReq[t, i, j, v].x >= 0.99:
+                    countRecvPrepReq += 1
                     print(
                         '\t\t\t\t{} RecvPrepReq in {} from {} at {}'.format(i, t, j, v))
             if SendPrepRes[t, i, v].x >= 0.99:
                 print('\t\t\t{} SendPrepRes in {} at {}'.format(i, t, v))
             for j in R:
                 if RecvPrepResp[t, i, j, v].x >= 0.99:
+                    countRecvPrepRes += 1
                     print(
                         '\t\t\t\t{} RecvPrepResp in {} from {} at {}'.format(i, t, j, v))
             if SendCommit[t, i, v].x >= 0.99:
                 print('\t\t\t{} SendCommit in {} at {}'.format(i, t, v))
             for j in R:
                 if RecvCommit[t, i, j, v].x >= 0.99:
+                    countRecvCommit += 1
                     print(
                         '\t\t\t\t{} RecvCommit in {} from {} at {}'.format(i, t, j, v))
             if SendCV[t, i, v].x >= 0.99:
                 print('\t\t\t{} SendCV in {} at {}'.format(i, t, v))
             for j in R:
                 if RecvCV[t, i, j, v].x >= 0.99:
+                    countRecvCV += 1
                     print('\t\t\t\t{} RecvCV in {} from {} at {}'.format(i, t, j, v))
             if BlockRelay[t, i, v].x >= 0.99:
                 print('\t\t\t{} BlockRelay in {} at {}'.format(i, t, v))
+        print('\t\t\t{} counterRcvd: PrepReq={} PrepRes={} Commit={} CV={}'.format(i, 
+                countRecvPrepReq, countRecvPrepRes, countRecvCommit, countRecvCV))
 print('========= DETAILED SOLUTION =========\n\n')
 
 
