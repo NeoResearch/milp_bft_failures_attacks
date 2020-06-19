@@ -167,7 +167,7 @@ consequently, addding a constraint `totalBlockRelayed = 0` makes MILP infeasible
 #commitReceivedNonByz  {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCommit[t,i,j,v]   >= sum{t in T: t>1} SendCommit[t,j,v];
 /* In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
 On the other hand, enabling it and commits together, model can only find N rounds as minimum*/
-cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
+#cvReceivedNonByz      {i in R_OK, j in R_OK, v in V: j!=i}: sum{t in T: t>1} RecvCV[t,i,j,v]       >= sum{t in T: t>1} SendCV[t,j,v];
 /* ----- Force nodes to receive if comes from Honest --- */
 
 /* Non-byz will not relay more than a single block. 
@@ -193,7 +193,7 @@ sendCVNextViewOnlyIfViewBeforeOk {i in R_OK, v in V: v>1}: sum{t in T: t>1} Send
 /* Assert Non-byz to SendCV every round, if commit not achieved 
 After first round we need to ensure circular behavior in order to not force if round is not active */
 assertSendCVIfNotSendCommitV1 {i in R_OK}:                    sum{t in T: t>1} SendCV[t,i,1] >= 1 - sum{t in T: t>1} SendCommit[t,i,1];
-assertSendCVIfNotCommitAndYesPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= 1 - sum{t in T: t>1} SendCommit[t,i,v] - (1 - sum{ii in R} Primary[ii,v-1]);
+assertSendCVIfNotCommitAndYesPrimary{i in R_OK, v in V: v>1}: sum{t in T: t>1} SendCV[t,i,v] >= (1 - sum{t in T: t>1} sum{v2 in V: v2<=v} SendCommit[t,i,v2]) - (1 - sum{ii in R} Primary[ii,v-1]);
 # The following four constraints may soon be excluded - Where used on old tests
 #assertSendCVIfNotRecvPrepReqV1{i in R_OK}:   sum{t in T: t>1} SendCV[t,i,1]   >= (1 - sum{j in R} sum{t in T: t>1} RecvPrepReq[t,i,j,1]);
 #assertSendCVIfNotEnoughPrepResV1{i in R_OK}: sum{t in T: t>1} SendCV[t,i,1]*2 >= (M - sum{j in R} sum{t in T: t>1} RecvPrepResp[t,i,j,1]);

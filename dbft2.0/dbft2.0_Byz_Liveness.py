@@ -419,7 +419,7 @@ for i in R_OK:
 for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
-        >= 1 - xsum(SendCommit[t, i, v] for t in T - {1}) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
+        >= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 <= v) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
         "assertSendCVIfNotCommitAndYesPrimary(%s,%s)" % (i, v),
     )
 
@@ -547,10 +547,10 @@ OBJ FUNCTION
 """
 
 # For Minimization
-# m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
 
 # For Maximization
-m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds)
+# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds)
 #m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
 
 m.verbose = 1
@@ -567,7 +567,6 @@ print('model has {} vars, {} constraints and {} nzs'.format(
 m.write('a.lp')
 
 status = m.optimize(max_seconds=600)
-
 
 if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
     print('\nsolution:')
