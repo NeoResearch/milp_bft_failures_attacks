@@ -419,7 +419,7 @@ for i in R_OK:
 for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
-        >= 1 - xsum(SendCommit[t, i, v - 1] for t in T - {1}) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
+        >= 1 - xsum(SendCommit[t, i, v] for t in T - {1}) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
         "assertSendCVIfNotCommitAndYesPrimary(%s,%s)" % (i, v),
     )
 
