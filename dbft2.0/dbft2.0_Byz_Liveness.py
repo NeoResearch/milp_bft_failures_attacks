@@ -262,6 +262,26 @@ for t, i, j, v in product(T - {1}, R, R, V):
             "cvReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
 
+
+# Force the node to Received PrepRes & PrepReq along with CV
+# This will help nodes to propose the same block on next view
+# This is currently not active on NEO dBFT 2.0
+"""
+for t, i, j, v in product(T - {1}, R, R_OK, V):        
+        # Or you received PrepRes before or together with RecvCV
+        m += (
+            xsum(RecvPrepResp[t2, i, j, v] for t2 in T if 1 < t2 <= t)
+            >= xsum(SendPrepRes[t2, j, v] for t2 in T if 1 < t2 < t) - (1-RecvCV[t, i, j, v])*(sum(1 for t2 in T if 1 < t2 < t)) ,
+            "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
+        )
+        m += (
+            xsum(RecvPrepReq[t2, i, j, v] for t2 in T if 1 < t2 <= t)
+            >= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t) - (1-RecvCV[t, i, j, v])*(sum(1 for t2 in T if 1 < t2 < t)) ,
+            "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
+        )
+"""        
+            
+
 # Force the node to Received PrepRes along with PrepReq
 for (t, i, j, v) in product(T - {1}, R, R, V):
     m += (
@@ -331,19 +351,20 @@ for (i, j, v) in product(R_OK, R_OK, V):
             xsum(RecvPrepResp[t, i, j, v] for t in T - {1})
             >= xsum(SendPrepRes[t, j, v] for t in T - {1}),
             "prepRespReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )
+        )'''
         m += (
             xsum(RecvCommit[t, i, j, v] for t in T - {1})
             >= xsum(SendCommit[t, j, v] for t in T - {1}),
             "commitReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )   '''
+        )      
     # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
     # On the other hand, enabling it and commits together, model can only find N rounds as minimum
         m += (
             xsum(RecvCV[t, i, j, v] for t in T - {1})
             >= xsum(SendCV[t, j, v] for t in T - {1}),
             "cvReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )
+        ) 
+
 
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
 for i in R_OK:
@@ -548,9 +569,11 @@ OBJ FUNCTION
 
 # For Minimization
 m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+# Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
+#m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
 
 # For Maximization
-# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds)
+#m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds*-1)
 #m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
 
 m.verbose = 1
@@ -626,3 +649,6 @@ elif status == OptimizationStatus.FEASIBLE:
         m.objective_value, m.objective_bound))
 elif status == OptimizationStatus.NO_SOLUTION_FOUND:
     print('no feasible solution found, upper bound is: {}'.format(m.objective_bound))
+
+for k in range(m.num_solutions):
+    print('Solution {} with Blocks {}'.format(k, m.objective_values[k]))
