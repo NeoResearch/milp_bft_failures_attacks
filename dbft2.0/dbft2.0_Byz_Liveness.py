@@ -279,8 +279,8 @@ for t, i, j, v in product(T - {1}, R, R_OK, V):
             >= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t) - (1-RecvCV[t, i, j, v])*(sum(1 for t2 in T if 1 < t2 < t)) ,
             "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
         )
-"""        
-            
+"""
+
 
 # Force the node to Received PrepRes along with PrepReq
 for (t, i, j, v) in product(T - {1}, R, R, V):
@@ -356,14 +356,14 @@ for (i, j, v) in product(R_OK, R_OK, V):
             xsum(RecvCommit[t, i, j, v] for t in T - {1})
             >= xsum(SendCommit[t, j, v] for t in T - {1}),
             "commitReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )      
+        )
     # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
     # On the other hand, enabling it and commits together, model can only find N rounds as minimum
         m += (
             xsum(RecvCV[t, i, j, v] for t in T - {1})
             >= xsum(SendCV[t, j, v] for t in T - {1}),
             "cvReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        ) 
+        )
 
 
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
@@ -450,17 +450,17 @@ for (i, v, t) in product(R_OK, V, T - {1}):
         SendPrepReq[t, i, v]
         <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noPrepReqIfCV(%s,%s,%s)" % (i, v, t),
-    ) 
+    )
     m += (
         SendPrepRes[t, i, v]
         <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noPrepResIfCV(%s,%s,%s)" % (i, v, t),
-    )  
+    )
     m += (
         SendCommit[t, i, v]
         <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noCommitIfCV(%s,%s,%s)" % (i, v, t),
-    ) 
+    )
     # LINKS Commit and LIMITS - analogous as the constrains for SendCV
     m += (
         SendCV[t, i, v]
@@ -472,12 +472,12 @@ for (i, v, t) in product(R_OK, V, T - {1}):
         SendPrepReq[t, i, v]
         <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesPrepReq(%s,%s,%s)" % (i, v, t),
-    )  
+    )
     m += (
         SendPrepRes[t, i, v]
         <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
         "noBlockYesPrepRes(%s,%s,%s)" % (i, v, t),
-    ) 
+    )
     m += (
         SendCommit[t, i, v]
         <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
@@ -568,7 +568,7 @@ OBJ FUNCTION
 """
 
 # For Minimization
-m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100);
+m.objective = minimize(totalBlockRelayed*1000 + numberOfRounds*100)
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
 #m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
 
@@ -637,8 +637,8 @@ for v in V:
                     print('\t\t\t\t{} RecvCV in {} from {} at {}'.format(i, t, j, v))
             if BlockRelay[t, i, v].x >= 0.99:
                 print('\t\t\t{} BlockRelay in {} at {}'.format(i, t, v))
-        print('\t\t\t{} counterRcvd: PrepReq={} PrepRes={} Commit={} CV={}'.format(i, 
-                countRecvPrepReq, countRecvPrepRes, countRecvCommit, countRecvCV))
+        print('\t\t\t{} counterRcvd: PrepReq={} PrepRes={} Commit={} CV={}'.format(i,
+                                                                                   countRecvPrepReq, countRecvPrepRes, countRecvCommit, countRecvCV))
 print('========= DETAILED SOLUTION =========\n\n')
 
 
