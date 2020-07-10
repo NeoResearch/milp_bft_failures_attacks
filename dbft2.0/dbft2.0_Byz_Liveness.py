@@ -609,34 +609,34 @@ for v in V:
         countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
             if SendPrepReq[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendPrepReq in {} at {}'.format(i, t, v))
+                print('\t\t\t{} SendPrepReq in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
                 if RecvPrepReq[t, i, j, v].x >= 0.99:
                     countRecvPrepReq += 1
                     print(
-                        '\t\t\t\t{} RecvPrepReq in {} from {} at {}'.format(i, t, j, v))
+                        '\t\t\t\t{} RecvPrepReq in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
             if SendPrepRes[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendPrepRes in {} at {}'.format(i, t, v))
+                print('\t\t\t{} SendPrepRes in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
                 if RecvPrepResp[t, i, j, v].x >= 0.99:
                     countRecvPrepRes += 1
                     print(
-                        '\t\t\t\t{} RecvPrepResp in {} from {} at {}'.format(i, t, j, v))
+                        '\t\t\t\t{} RecvPrepResp in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
             if SendCommit[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendCommit in {} at {}'.format(i, t, v))
+                print('\t\t\t{} SendCommit in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
                 if RecvCommit[t, i, j, v].x >= 0.99:
                     countRecvCommit += 1
                     print(
-                        '\t\t\t\t{} RecvCommit in {} from {} at {}'.format(i, t, j, v))
+                        '\t\t\t\t{} RecvCommit in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
             if SendCV[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendCV in {} at {}'.format(i, t, v))
+                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
                 if RecvCV[t, i, j, v].x >= 0.99:
                     countRecvCV += 1
-                    print('\t\t\t\t{} RecvCV in {} from {} at {}'.format(i, t, j, v))
+                    print('\t\t\t\t{} RecvCV in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
             if BlockRelay[t, i, v].x >= 0.99:
-                print('\t\t\t{} BlockRelay in {} at {}'.format(i, t, v))
+                print('\t\t\t{} BlockRelay in {}/{} at {}'.format(i, t, t+v*tMax, v))
         print('\t\t\t{} counterRcvd: PrepReq={} PrepRes={} Commit={} CV={}'.format(i,
                                                                                    countRecvPrepReq, countRecvPrepRes, countRecvCommit, countRecvCV))
 print('========= DETAILED SOLUTION =========\n\n')
