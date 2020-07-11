@@ -1,5 +1,6 @@
 from itertools import product
 from mip import Model, BINARY, INTEGER, xsum, OptimizationStatus, maximize, minimize
+from execution_draw import is_selected, ExecutionDraw
 # Total number of nodes
 N = 4
 # number of allowed faulty nodes
@@ -133,7 +134,7 @@ for (i, v) in product(R, V):
 for (i, j, v) in product(R, R, V):
     m += RecvPrepReq[1, i, j, v] == 0, "initRecvPrepReq(%s,%s,%s)" % (i, j, v)
     m += RecvPrepResp[1, i, j, v] == 0, "initRecvPrepRes(%s,%s,%s)" % (i, j, v)
-    m += RecvCommit[1, i, j, v] == 0, "initRecvCommit(%s,%s, %s)" % (i, j, v)
+    m += RecvCommit[1, i, j, v] == 0, "initRecvCommit(%s,%s,%s)" % (i, j, v)
     m += RecvCV[1, i, j, v] == 0, "initRecvCV(%s,%s,%s)" % (i, j, v)
 
 """
@@ -596,43 +597,44 @@ if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE
         if abs(v.x) > 1e-6:  # only printing non-zeros
             print(f'{v.name} : {v.x}')
 
+
 print('\n\n========= DETAILED SOLUTION =========')
 for v in V:
     print(f'VIEW {v}')
     for i in R:
         print(f'\tValidator {i}')
-        if Primary[i, v].x >= 0.99:
+        if is_selected(Primary[i, v]):
             print('\t\tPRIMARY')
         else:
             print('\t\tBACKUP')
         countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
-            if SendPrepReq[t, i, v].x >= 0.99:
+            if is_selected(SendPrepReq[t, i, v]):
                 print(f'\t\t\t{i} SendPrepReq in {t}/{t+v*tMax} at {v}')
             for j in R:
-                if RecvPrepReq[t, i, j, v].x >= 0.99:
+                if is_selected(RecvPrepReq[t, i, j, v]):
                     countRecvPrepReq += 1
                     print(
                         f'\t\t\t\t{i} RecvPrepReq in {t}/{t+v*tMax} from {j} at {v}')
-            if SendPrepRes[t, i, v].x >= 0.99:
+            if is_selected(SendPrepRes[t, i, v]):
                 print(f'\t\t\t{i} SendPrepRes in {t}/{t+v*tMax} at {v}')
             for j in R:
-                if RecvPrepResp[t, i, j, v].x >= 0.99:
+                if is_selected(RecvPrepResp[t, i, j, v]):
                     countRecvPrepRes += 1
                     print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t+v*tMax} from {j} at {v}')
-            if SendCommit[t, i, v].x >= 0.99:
+            if is_selected(SendCommit[t, i, v]):
                 print(f'\t\t\t{i} SendCommit in {t}/{t+v*tMax} at {v}')
             for j in R:
-                if RecvCommit[t, i, j, v].x >= 0.99:
+                if is_selected(RecvCommit[t, i, j, v]):
                     countRecvCommit += 1
                     print(f'\t\t\t\t{i} RecvCommit in {t}/{t+v*tMax} from {j} at {v}')
-            if SendCV[t, i, v].x >= 0.99:
+            if is_selected(SendCV[t, i, v]):
                 print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
-                if RecvCV[t, i, j, v].x >= 0.99:
+                if is_selected(RecvCV[t, i, j, v]):
                     countRecvCV += 1
                     print(f'\t\t\t\t{i} RecvCV in {t}/{t+v*tMax} from {j} at {v}')
-            if BlockRelay[t, i, v].x >= 0.99:
+            if is_selected(BlockRelay[t, i, v]):
                 print(f'\t\t\t{i} BlockRelay in {t}/{t+v*tMax} at {v}')
         print(f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
 print('========= DETAILED SOLUTION =========\n\n')
@@ -648,3 +650,12 @@ elif status == OptimizationStatus.NO_SOLUTION_FOUND:
 
 for k in range(m.num_solutions):
     print(f'Solution {k} with Blocks {m.objective_values[k]}')
+
+print("\n")
+execution_draw = ExecutionDraw(
+    tMax, N, f, M,
+    SendPrepReq, SendPrepRes, SendCommit, SendCV,
+    RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
+)
+execution_draw.draw_tikzpicture()
+print("")
