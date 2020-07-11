@@ -8,7 +8,7 @@ f = int((N-1)/3)
 M = 2*f+1
 tMax = 8
 
-print('Total Number of Nodes is N={}, with f={} and honest M={} and tMax={}\n'.format(N, f, M, tMax))
+print(f'Total Number of Nodes is N={N}, with f={f} and honest M={M} and tMax={tMax}\n')
 
 # custom data can be loaded here
 
@@ -584,8 +584,7 @@ m.verbose = 1
 #
 #          ]
 
-print('model has {} vars, {} constraints and {} nzs'.format(
-    m.num_cols, m.num_rows, m.num_nz))
+print(f'model has {m.num_cols} vars, {m.num_rows} constraints and {m.num_nz} nzs')
 
 m.write('a.lp')
 
@@ -595,13 +594,13 @@ if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE
     print('\nsolution:')
     for v in m.vars:
         if abs(v.x) > 1e-6:  # only printing non-zeros
-            print('{} : {}'.format(v.name, v.x))
+            print(f'{v.name} : {v.x}')
 
 print('\n\n========= DETAILED SOLUTION =========')
 for v in V:
-    print('VIEW {}'.format(v))
+    print(f'VIEW {v}')
     for i in R:
-        print('\tValidator {}'.format(i))
+        print(f'\tValidator {i}')
         if Primary[i, v].x >= 0.99:
             print('\t\tPRIMARY')
         else:
@@ -609,46 +608,43 @@ for v in V:
         countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
             if SendPrepReq[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendPrepReq in {}/{} at {}'.format(i, t, t+v*tMax, v))
+                print(f'\t\t\t{i} SendPrepReq in {t}/{t+v*tMax} at {v}')
             for j in R:
                 if RecvPrepReq[t, i, j, v].x >= 0.99:
                     countRecvPrepReq += 1
                     print(
-                        '\t\t\t\t{} RecvPrepReq in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
+                        f'\t\t\t\t{i} RecvPrepReq in {t}/{t+v*tMax} from {j} at {v}')
             if SendPrepRes[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendPrepRes in {}/{} at {}'.format(i, t, t+v*tMax, v))
+                print(f'\t\t\t{i} SendPrepRes in {t}/{t+v*tMax} at {v}')
             for j in R:
                 if RecvPrepResp[t, i, j, v].x >= 0.99:
                     countRecvPrepRes += 1
-                    print(
-                        '\t\t\t\t{} RecvPrepResp in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
+                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t+v*tMax} from {j} at {v}')
             if SendCommit[t, i, v].x >= 0.99:
-                print('\t\t\t{} SendCommit in {}/{} at {}'.format(i, t, t+v*tMax, v))
+                print(f'\t\t\t{i} SendCommit in {t}/{t+v*tMax} at {v}')
             for j in R:
                 if RecvCommit[t, i, j, v].x >= 0.99:
                     countRecvCommit += 1
-                    print(
-                        '\t\t\t\t{} RecvCommit in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
+                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t+v*tMax} from {j} at {v}')
             if SendCV[t, i, v].x >= 0.99:
                 print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+v*tMax, v))
             for j in R:
                 if RecvCV[t, i, j, v].x >= 0.99:
                     countRecvCV += 1
-                    print('\t\t\t\t{} RecvCV in {}/{} from {} at {}'.format(i, t, t+v*tMax, j, v))
+                    print(f'\t\t\t\t{i} RecvCV in {t}/{t+v*tMax} from {j} at {v}')
             if BlockRelay[t, i, v].x >= 0.99:
-                print('\t\t\t{} BlockRelay in {}/{} at {}'.format(i, t, t+v*tMax, v))
-        print('\t\t\t{} counterRcvd: PrepReq={} PrepRes={} Commit={} CV={}'.format(i,
-                                                                                   countRecvPrepReq, countRecvPrepRes, countRecvCommit, countRecvCV))
+                print(f'\t\t\t{i} BlockRelay in {t}/{t+v*tMax} at {v}')
+        print(f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
 print('========= DETAILED SOLUTION =========\n\n')
 
 
 if status == OptimizationStatus.OPTIMAL:
-    print('optimal solution cost {} found'.format(m.objective_value))
+    print(f'optimal solution cost {m.objective_value} found')
 elif status == OptimizationStatus.FEASIBLE:
     print('sol.cost {} found, best possible: {}'.format(
         m.objective_value, m.objective_bound))
 elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-    print('no feasible solution found, upper bound is: {}'.format(m.objective_bound))
+    print(f'no feasible solution found, upper bound is: {m.objective_bound}')
 
 for k in range(m.num_solutions):
-    print('Solution {} with Blocks {}'.format(k, m.objective_values[k]))
+    print(f'Solution {k} with Blocks {m.objective_values[k]}')
