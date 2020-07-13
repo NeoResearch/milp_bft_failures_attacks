@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from drawer import TikzDrawer
 
@@ -73,7 +74,7 @@ class ExecutionDraw(object):
         add_recv_msg(self.view, view_size, ArrowMessageType.Commit, recv_commit)
         add_recv_msg(self.view, view_size, ArrowMessageType.CV, recv_cv)
 
-    def draw_tikzpicture(self):
+    def draw_tikzpicture(self, out=sys.stdout):
         send_receive_variables_options = {
             ArrowMessageType.PrepReq: ['thick', '->', 'color=blue'],
             ArrowMessageType.PrepRes: ['thick', '->', 'color=green'],
@@ -82,6 +83,7 @@ class ExecutionDraw(object):
         }
         with TikzDrawer() as my_drawer:
             for node in range(1, self.n + 1):
+                my_drawer.node(f"{node}", (0, node))
                 my_drawer.line((1, node), (len(self.view) * self.view_size, node), ["thick", "dashed"])
 
             for view_num, the_view in self.view.items():

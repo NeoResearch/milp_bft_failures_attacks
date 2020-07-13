@@ -1,6 +1,9 @@
+import sys
+
+
 class Drawer(object):
-	def __init__(self):
-		pass
+	def __init__(self, out=sys.stdout):
+		self.out = out
 
 	def __enter__(self) -> object:
 		return self
@@ -43,25 +46,25 @@ class Drawer(object):
 
 
 class TikzDrawer(Drawer):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, out=sys.stdout):
+		super().__init__(out)
 
 	def __enter__(self) -> Drawer:
-		print("\\begin{tikzpicture}[yscale=-1]")
+		self.out.write("\\begin{tikzpicture}[yscale=-1]")
 		return self
 
 	def __exit__(self, type, value, traceback) -> bool:
 		if value:
 			raise value
-		print("\\end{tikzpicture}")
+		self.out.write("\\end{tikzpicture}")
 		return True
 
 	def node(self, name: str, pos: (int, int), d_options: list = ['draw']):
-		print(f"\\node{self.gen_options(d_options)} at ({pos[0]},{pos[1]}) {{{name}}};")
+		self.out.write(f"\\node{self.gen_options(d_options)} at ({pos[0]},{pos[1]}) {{{name}}};")
 
 	def draw(self, command: str, pos: list, d_options: list, cmd_options: list, tail_options: list):
 		tail_command = f' -- {self.gen_options(tail_options)}' if len(tail_options) > 0 else ''
-		print(
+		self.out.write(
 			f"\\draw{self.gen_options(d_options)} ({pos[0][0]},{pos[0][1]}) {command}{self.gen_options(cmd_options)}"
 			f"{f'({pos[1][0]},{pos[1][1]})' if len(pos) > 1 else ''}{tail_command};"
 		)
