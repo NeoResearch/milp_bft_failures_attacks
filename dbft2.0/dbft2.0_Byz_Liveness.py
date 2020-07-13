@@ -615,8 +615,7 @@ for v in V:
             for j in R:
                 if is_selected(RecvPrepReq[t, i, j, v]):
                     countRecvPrepReq += 1
-                    print(
-                        f'\t\t\t\t{i} RecvPrepReq in {t}/{t+tTotal} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvPrepReq in {t}/{t+tTotal} from {j} at {v}')
             if is_selected(SendPrepRes[t, i, v]):
                 print(f'\t\t\t{i} SendPrepRes in {t}/{t+tTotal} at {v}')
             for j in R:
