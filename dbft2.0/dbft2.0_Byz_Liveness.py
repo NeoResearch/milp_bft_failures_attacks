@@ -360,28 +360,21 @@ Honest Node Constraints
 # consequently, addding a constraint `totalBlockRelayed = 0` makes MILP infeasible or unbounded
 for (i, j, v) in product(R_OK, R_OK, V):
     if i != j:
-        '''m += (
-            xsum(RecvPrepReq[t, i, j, v] for t in T - {1})
-            >= xsum(SendPrepReq[t, j, v] for t in T - {1}),
-            "prepReqReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )
-        m += (
-            xsum(RecvPrepResp[t, i, j, v] for t in T - {1})
-            >= xsum(SendPrepRes[t, j, v] for t in T - {1}),
-            "prepRespReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )'''
-        m += (
-            xsum(RecvCommit[t, i, j, v] for t in T - {1})
-            >= xsum(SendCommit[t, j, v] for t in T - {1}),
-            "commitReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )
-    # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
-    # On the other hand, enabling it and commits together, model can only find N rounds as minimum
-        m += (
-            xsum(RecvCV[t, i, j, v] for t in T - {1})
-            >= xsum(SendCV[t, j, v] for t in T - {1}),
-            "cvReceivedNonByz(%s,%s,%s)" % (i, j, v),
-        )
+        add_var_loop = [
+            # (RecvPrepReq, SendPrepReq, "prepReqReceivedNonByz"),
+            # (RecvPrepResp, SendPrepRes, "prepRespReceivedNonByz"),
+            (RecvCommit, SendCommit, "commitReceivedNonByz"),
+            # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
+            # On the other hand, enabling it and commits together, model can only find N rounds as minimum
+            (RecvCV, SendCV, "cvReceivedNonByz"),
+        ]
+        for it in add_var_loop:
+            recv_var, send_var, it_name = it
+            m += (
+                xsum(recv_var[t, i, j, v] for t in T - {1})
+                >= xsum(send_var[t, j, v] for t in T - {1}),
+                f"{it_name}({i},{j},{v})",
+            )
 
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
 for i in R_OK:
