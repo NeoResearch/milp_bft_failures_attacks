@@ -91,13 +91,18 @@ class ExecutionDraw(object):
                 t, node, view = it
                 self.views[view].block_relay.append(BlockRelay(t, node, view))
 
+        def get_or_create_view(view: dict, number: int):
+            the_view = view.get(number, View(number, None))
+            view[number] = the_view
+            if not the_view.primary:
+                print(f"The view {the_view.number} has no primary")
+            return the_view
+
         def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, v = it
-                    the_view = view.get(v, View(view, None))
-                    if not the_view.primary:
-                        print(f"The view {the_view.number} has no primary")
+                    the_view = get_or_create_view(view, v)
                     arrow_message = the_view.packs.get(
                         (message_type, i), PackMessage(message_type, t + (v - 1) * view_size, i, v)
                     )
@@ -112,7 +117,7 @@ class ExecutionDraw(object):
                     if v not in view:
                         raise Exception(f"View {v} not found")
 
-                    the_view = view[v].packs
+                    the_view = get_or_create_view(view, v).packs
                     if (message_type, j) not in the_view:
                         raise Exception(f"{(message_type, j)} not in view {v}")
 
@@ -191,7 +196,7 @@ class ExecutionDraw(object):
                 for arrow_type, arrow_opt in send_receive_variables_options.items():
                     if arrow_type not in ignore_messages:
                         my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
-                        my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it))
+                        my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it), [])
                         it += 1
 
 
@@ -214,7 +219,7 @@ def generate_pdf_file(drawing_file_name: str, remove_logs: bool = True):
                 stdout = stdout.decode()
                 print(stdout)
                 if "LaTeX Error: File `standalone.cls' not found" in stdout:
-                    print("You are missing the 'standalone' pachacke.")
+                    print("You are missing the 'standalone' package.")
                     print(
                         "You may need to install 'texlive-latex-extra' with "
                         "'sudo apt-get install texlive-latex-extra'"
