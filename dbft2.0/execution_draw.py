@@ -181,13 +181,17 @@ class ExecutionDraw(object):
                         ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
                         []
                     )
+                    my_drawer.circle(
+                        ((relay.view - 1) * self.view_size + relay.time, relay.node),
+                        ["radius=.08"]
+                    )
                 if inc_block:
                     block_num += 1
 
                 for _, pack in view.packs.items():
-                    draw_circle = True
+                    draw_circle = set()
                     for arrow in pack.arrows():
-                        draw_circle = False
+                        draw_circle.add(arrow.destination)
                         if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
                                 and not (arrow.node == self.views[arrow.view].primary and
                                          arrow.arrow_message_type in primary_ignore_messages):
@@ -200,7 +204,7 @@ class ExecutionDraw(object):
                             )
 
                     if pack.view in self.views:
-                        if circle_all_send or draw_circle:
+                        if circle_all_send or (len(draw_circle) == 1 and pack.node in draw_circle):
                             my_drawer.circle(
                                 (pack.t, pack.node),
                                 [send_receive_variables_options[pack.arrow_message_type][-1]] + ["radius=.08"]

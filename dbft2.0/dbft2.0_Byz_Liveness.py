@@ -17,6 +17,24 @@ minMax = 0
 blocksWeight = 1000
 numberOfRoundsWeight = 100
 
+
+def get_args_value(name: str, default=None, is_bool: bool = False):
+    if f"--{name}" in sys.argv:
+        if is_bool:
+            return True
+        return sys.argv[sys.argv.index(f"--{name}") + 1]
+
+    for arg in sys.argv:
+        if arg.startswith(f"--{name}="):
+            return arg[len(f"--{name}="):]
+
+    if default is not None:
+        return default
+    if is_bool:
+        return False
+    return None
+
+
 # Print total number of arguments
 print('Total number of arguments:', format(len(sys.argv)))
 
@@ -26,22 +44,22 @@ print('Argument List:', str(sys.argv))
 if len(sys.argv) > 1:
     minMax = int(sys.argv[1])
     if minMax == 1:
-        numberOfRoundsWeight=numberOfRoundsWeight*-1
-    print('MinMax',  str(minMax))
+        numberOfRoundsWeight = numberOfRoundsWeight * -1
+    print('MinMax', str(minMax))
 if len(sys.argv) > 2:
     blocksWeight = int(sys.argv[2])
-    print('blocksWeight',  str(blocksWeight))
+    print('blocksWeight', str(blocksWeight))
 if len(sys.argv) > 3:
     numberOfRoundsWeight = int(sys.argv[3])
-    print('numberOfRoundsWeight',  str(numberOfRoundsWeight))
+    print('numberOfRoundsWeight', str(numberOfRoundsWeight))
 # =================== Optional Parameters  ========================= 
 
 # Total number of nodes
 N = 4
 # number of allowed faulty nodes
-f = int((N-1)/3)
+f = int((N - 1) / 3)
 # safe number of honest nodes
-M = 2*f+1
+M = 2 * f + 1
 tMax = 8
 
 print(f'Total Number of Nodes is N={N}, with f={f} and honest M={M} and tMax={tMax}\n')
@@ -298,7 +316,6 @@ for t, i, j, v in product(T - {1}, R, R, V):
             "cvReceived(%s,%s,%s,%s)" % (t, i, j, v),
         )
 
-
 # Force the node to Received PrepRes & PrepReq along with CV
 # This will help nodes to propose the same block on next view
 # This is currently not active on NEO dBFT 2.0
@@ -316,7 +333,6 @@ for t, i, j, v in product(T - {1}, R, R_OK, V):
             "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
         )
 """
-
 
 # Force the node to Received PrepRes along with PrepReq
 for (t, i, j, v) in product(T - {1}, R, R, V):
@@ -348,7 +364,6 @@ for (i, j, v) in product(R, R, V):
         "rcvdCVOO(%s,%s,%s)" % (i, j, v),
     )
 
-
 """
 AUXILIARY BLOCK RELAYED
 =======================
@@ -364,7 +379,6 @@ for (v) in V:
         >= xsum(BlockRelay[t, i, v] for t in T - {1} for i in R),
         "blockRelayedCounterForced(%s)" % (v),
     )
-
 
 """
 Honest Node Constraints
@@ -400,7 +414,6 @@ for (i, j, v) in product(R_OK, R_OK, V):
             >= xsum(SendCV[t, j, v] for t in T - {1}),
             "cvReceivedNonByz(%s,%s,%s)" % (i, j, v),
         )
-
 
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
 for i in R_OK:
@@ -605,17 +618,17 @@ OBJ FUNCTION
 
 # For Minimization - Default
 if not minMax:
-    m.objective = minimize(totalBlockRelayed*blocksWeight + numberOfRounds*numberOfRoundsWeight)
+    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
     print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 if minMax:
-    m.objective = maximize(totalBlockRelayed*blocksWeight + numberOfRounds*numberOfRoundsWeight)
+    m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
     print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
-#m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
+# m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
 
 # For Maximization
-#m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds*-1)
-#m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
+# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds*-1)
+# m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
 
 m.verbose = 1
 
@@ -637,10 +650,9 @@ if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE
         if abs(v.x) > 1e-6:  # only printing non-zeros
             print(f'{v.name} : {v.x}')
 
-
 print('\n\n========= DETAILED SOLUTION =========')
 for v in V:
-    tTotal = (v-1)*tMax;
+    tTotal = (v - 1) * tMax
     print(f'VIEW {v}')
     for i in R:
         print(f'\tValidator {i}')
@@ -651,34 +663,34 @@ for v in V:
         countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
             if is_selected(SendPrepReq[t, i, v]):
-                print(f'\t\t\t{i} SendPrepReq in {t}/{t+tTotal} at {v}')
+                print(f'\t\t\t{i} SendPrepReq in {t}/{t + tTotal} at {v}')
             for j in R:
                 if is_selected(RecvPrepReq[t, i, j, v]):
                     countRecvPrepReq += 1
-                    print(f'\t\t\t\t{i} RecvPrepReq in {t}/{t+tTotal} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvPrepReq in {t}/{t + tTotal} from {j} at {v}')
             if is_selected(SendPrepRes[t, i, v]):
-                print(f'\t\t\t{i} SendPrepRes in {t}/{t+tTotal} at {v}')
+                print(f'\t\t\t{i} SendPrepRes in {t}/{t + tTotal} at {v}')
             for j in R:
                 if is_selected(RecvPrepResp[t, i, j, v]):
                     countRecvPrepRes += 1
-                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t+tTotal} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t + tTotal} from {j} at {v}')
             if is_selected(SendCommit[t, i, v]):
-                print(f'\t\t\t{i} SendCommit in {t}/{t+tTotal} at {v}')
+                print(f'\t\t\t{i} SendCommit in {t}/{t + tTotal} at {v}')
             for j in R:
                 if is_selected(RecvCommit[t, i, j, v]):
                     countRecvCommit += 1
-                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t+tTotal} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t + tTotal} from {j} at {v}')
             if is_selected(SendCV[t, i, v]):
-                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+tTotal, v))
+                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t + tTotal, v))
             for j in R:
                 if is_selected(RecvCV[t, i, j, v]):
                     countRecvCV += 1
-                    print(f'\t\t\t\t{i} RecvCV in {t}/{t+tTotal} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvCV in {t}/{t + tTotal} from {j} at {v}')
             if is_selected(BlockRelay[t, i, v]):
-                print(f'\t\t\t{i} BlockRelay in {t}/{t+tTotal} at {v}')
-        print(f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
+                print(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}')
+        print(
+            f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
 print('========= DETAILED SOLUTION =========\n\n')
-
 
 if status == OptimizationStatus.OPTIMAL:
     print(f'optimal solution cost {m.objective_value} found')
@@ -693,6 +705,7 @@ for k in range(m.num_solutions):
 
 print("\n")
 
+
 drawing_file_name = \
     f"sol" \
     f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
@@ -705,6 +718,15 @@ with open(f"{drawing_file_name}.tex", 'w') as out:
         RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
         Primary, BlockRelay
     )
-    execution_draw.draw_tikzpicture(out=out)
+    view_title = get_args_value("view_title", True)
+    first_block = get_args_value("first_block", 1)
+    rand_pos = get_args_value("rand_pos", False)
+    generate_full_latex = get_args_value("generate_full_latex", True)
+    circle_all_send = get_args_value("circle_all_send", False)
+    execution_draw.draw_tikzpicture(
+        view_title=view_title, first_block=first_block, rand_pos=rand_pos,
+        generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
+        out=out,
+    )
 
 generate_pdf_file(drawing_file_name)
