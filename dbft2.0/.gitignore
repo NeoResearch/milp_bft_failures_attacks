@@ -3,3 +3,4 @@
 *.sol
 __pycache__
 *.tex
+*.pdf
