@@ -7,7 +7,7 @@ import sys
 # EXAMPLES
 # MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
 # python3 dbft2.0_Byz_Liveness.py -1 1000 -100
-# MINIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
+# MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
 
 # Minimization as Default
 minMax = 0; 
