@@ -424,26 +424,19 @@ for (i, v) in product(R_OK, V):
 # We assume that honest nodes will only perform an action if view change was approved - no view jumps
 # - not tested if really needed
 for (i, v) in product(R_OK, V - {1}):
-    m += (
-        xsum(SendPrepReq[t, i, v] for t in T - {1})
-        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
-        "sendPrepReqOnlyIfViewBeforeOk(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendPrepRes[t, i, v] for t in T - {1})
-        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
-        "sendPrepResOnlyIfViewBeforeOk(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCommit[t, i, v] for t in T - {1})
-        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
-        "sendCommitOnlyIfViewBeforeOk(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCV[t, i, v] for t in T - {1})
-        <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
-        "sendCVOnlyIfViewBeforeOk(%s,%s)" % (i, v),
-    )
+    add_var_loop = [
+        (SendPrepReq, "sendPrepReqOnlyIfViewBeforeOk"),
+        (SendPrepRes, "sendPrepResOnlyIfViewBeforeOk"),
+        (SendCommit, "sendCommitOnlyIfViewBeforeOk"),
+        (SendCV, "sendCVOnlyIfViewBeforeOk"),
+    ]
+    for it in add_var_loop:
+        it_var, it_name = it
+        m += (
+            xsum(it_var[t, i, v] for t in T - {1})
+            <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
+            f"{it_name}({i},{v})",
+        )
 
 # Assert Non-byz to SendCV every round, if commit not achieved
 # After first round we need to ensure circular behavior in order to not force if round is not active
