@@ -1,6 +1,7 @@
 from itertools import product
 from mip import Model, BINARY, INTEGER, xsum, OptimizationStatus, maximize, minimize
-from execution_draw import is_selected, ExecutionDraw
+from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
+from datetime import datetime
 import sys
 
 # =================== Optional Parameters  =========================
@@ -11,28 +12,28 @@ import sys
 # MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
 
 # Minimization as Default
-minMax = 0; 
+minMax = 0
 # default weight hardcoded
-blocksWeight = 1000;
-numberOfRoundsWeight = 100;
+blocksWeight = 1000
+numberOfRoundsWeight = 100
 
 # Print total number of arguments
-print ('Total number of arguments:', format(len(sys.argv)))
- 
+print('Total number of arguments:', format(len(sys.argv)))
+
 # Print all arguments
-print ('Argument List:', str(sys.argv))
+print('Argument List:', str(sys.argv))
 
 if len(sys.argv) > 1:
     minMax = int(sys.argv[1])
     if minMax == 1:
         numberOfRoundsWeight=numberOfRoundsWeight*-1
-    print ('MinMax',  str(minMax))
+    print('MinMax',  str(minMax))
 if len(sys.argv) > 2:
     blocksWeight = int(sys.argv[2])
-    print ('blocksWeight',  str(blocksWeight))
+    print('blocksWeight',  str(blocksWeight))
 if len(sys.argv) > 3:
     numberOfRoundsWeight = int(sys.argv[3])
-    print ('numberOfRoundsWeight',  str(numberOfRoundsWeight))
+    print('numberOfRoundsWeight',  str(numberOfRoundsWeight))
 # =================== Optional Parameters  ========================= 
 
 # Total number of nodes
@@ -691,11 +692,19 @@ for k in range(m.num_solutions):
     print(f'Solution {k} with Blocks {m.objective_values[k]}')
 
 print("\n")
-execution_draw = ExecutionDraw(
-    tMax, N, f, M,
-    SendPrepReq, SendPrepRes, SendCommit, SendCV,
-    RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
-    Primary, BlockRelay
-)
-execution_draw.draw_tikzpicture()
-print("")
+
+drawing_file_name = \
+    f"sol" \
+    f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
+    f"_MinMax_{minMax}_blocksWeight_{blocksWeight}_numberOfRoundsWeight_{numberOfRoundsWeight}" \
+    f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
+with open(f"{drawing_file_name}.tex", 'w') as out:
+    execution_draw = ExecutionDraw(
+        tMax, N, f, M,
+        SendPrepReq, SendPrepRes, SendCommit, SendCV,
+        RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
+        Primary, BlockRelay
+    )
+    execution_draw.draw_tikzpicture(out=out)
+
+generate_pdf_file(drawing_file_name)

@@ -1,5 +1,7 @@
 import sys
 import random
+import subprocess
+import os
 from enum import Enum
 from drawer import TikzDrawer
 
@@ -128,6 +130,7 @@ class ExecutionDraw(object):
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
             primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]), out=sys.stdout,
+            generate_full_latex: bool = True,
     ):
         random.seed(0)
         send_receive_variables_options = {
@@ -142,14 +145,19 @@ class ExecutionDraw(object):
                     my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
 
             for node in range(1, self.n + 1):
-                my_drawer.node(f"{node}", (0, node))
+                # Converting to start at zero
+                my_drawer.node(f"{node - 1}", (0, node))
                 my_drawer.line((1, node), (len(self.views) * self.view_size, node), ["thick", "dashed"])
 
             block_num = first_block
 
             for view_num in sorted(self.views.keys()):
                 view = self.views[view_num]
-                my_drawer.node(f"$Pr.^{view.primary}$", ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5))
+                # Converting to start at zero
+                my_drawer.node(
+                    f"$Pr.^{view.primary - 1}$",
+                    ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5)
+                )
 
                 inc_block = False
                 for relay in view.block_relay:
@@ -166,7 +174,7 @@ class ExecutionDraw(object):
                     for arrow in arrow.arrows():
                         if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
                                 and not (arrow.node == self.views[arrow.view].primary and
-                                        arrow.arrow_message_type in primary_ignore_messages):
+                                         arrow.arrow_message_type in primary_ignore_messages):
                             first_val = random.uniform(-.1, .1) if rand_pos else 0
                             second_val = random.uniform(-.1, .1) if rand_pos else 0
                             my_drawer.line(
@@ -182,3 +190,35 @@ class ExecutionDraw(object):
                         my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
                         my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it))
                         it += 1
+
+
+def generate_pdf_file(drawing_file_name: str, remove_logs: bool = True):
+    pdflatex_call = ["pdflatex", "-interaction", "nonstopmode"]
+    with subprocess.Popen(
+            pdflatex_call + [f"{drawing_file_name}.tex"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as proc:
+        proc.wait()
+        if proc.returncode == 0:
+            if remove_logs:
+                os.remove(f"./{drawing_file_name}.aux")
+                os.remove(f"./{drawing_file_name}.log")
+            return True
+        else:
+            print(f"There was a problem processing the file {drawing_file_name}.tex")
+            stdout = proc.stdout.read()
+            if stdout:
+                print("Standard output")
+                stdout = stdout.decode()
+                print(stdout)
+                if "LaTeX Error: File `standalone.cls' not found" in stdout:
+                    print("You are missing the 'standalone' pachacke.")
+                    print(
+                        "You may need to install 'texlive-latex-extra' with "
+                        "'sudo apt-get install texlive-latex-extra'"
+                    )
+            stderr = proc.stderr.read()
+            if stderr:
+                print("Standard error output")
+                stderr = stderr.decode()
+                print(stderr)
+    return False
