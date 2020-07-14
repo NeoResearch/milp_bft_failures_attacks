@@ -165,17 +165,17 @@ Time zero constraints
 =====================
 """
 for (i, v) in product(R, V):
-    m += SendPrepReq[1, i, v] == 0, "initSendPrepReq(%s,%s)" % (i, v)
-    m += SendPrepRes[1, i, v] == 0, "initSendPrepRes(%s,%s)" % (i, v)
-    m += SendCommit[1, i, v] == 0, "initSendCommit(%s,%s)" % (i, v)
-    m += SendCV[1, i, v] == 0, "initSendCV(%s,%s)" % (i, v)
-    m += BlockRelay[1, i, v] == 0, "initBlockRelay(%s,%s)" % (i, v)
+    m += SendPrepReq[1, i, v] == 0, f"initSendPrepReq({i},{v})"
+    m += SendPrepRes[1, i, v] == 0, f"initSendPrepRes({i},{v})"
+    m += SendCommit[1, i, v] == 0, f"initSendCommit({i},{v})"
+    m += SendCV[1, i, v] == 0, f"initSendCV({i},{v})"
+    m += BlockRelay[1, i, v] == 0, f"initBlockRelay({i},{v})"
 
 for (i, j, v) in product(R, R, V):
-    m += RecvPrepReq[1, i, j, v] == 0, "initRecvPrepReq(%s,%s,%s)" % (i, j, v)
-    m += RecvPrepResp[1, i, j, v] == 0, "initRecvPrepRes(%s,%s,%s)" % (i, j, v)
-    m += RecvCommit[1, i, j, v] == 0, "initRecvCommit(%s,%s,%s)" % (i, j, v)
-    m += RecvCV[1, i, j, v] == 0, "initRecvCV(%s,%s,%s)" % (i, j, v)
+    m += RecvPrepReq[1, i, j, v] == 0, f"initRecvPrepReq({i},{j},{v})"
+    m += RecvPrepResp[1, i, j, v] == 0, f"initRecvPrepRes({i},{j},{v})"
+    m += RecvCommit[1, i, j, v] == 0, f"initRecvCommit({i},{j},{v})"
+    m += RecvCV[1, i, j, v] == 0, f"initRecvCV({i},{j},{v})"
 
 """
 Primary Constraints
@@ -185,10 +185,10 @@ Primary Constraints
 m += xsum(Primary[i, 1] for i in R) == 1, "consensusShouldStart"
 
 for v in V:
-    m += xsum(Primary[i, v] for i in R) <= 1, "singlePrimaryEveryView(%s)" % v
+    m += xsum(Primary[i, v] for i in R) <= 1, f"singlePrimaryEveryView({v})"
 
 for i in R:
-    m += xsum(Primary[i, v] for v in V) <= 1, "primaryOO(%s)" % i
+    m += xsum(Primary[i, v] for v in V) <= 1, f"primaryOO({i})"
 
 # Ensure circular behavior, if previous Primary not found and conclusions not done we can not move on.
 # Primary should had fault, at least*/
@@ -196,7 +196,7 @@ for v in V - {1}:
     m += (
         xsum(Primary[i, v] * (v - 1) for i in R)
         <= xsum(Primary[i, v2] for i in R for v2 in V if v2 < v),
-        "avoidJumpingViews(%s)" % v,
+        f"avoidJumpingViews({v})",
     )
 
 # You should proof you have certificates to be the Primary,
@@ -204,7 +204,7 @@ for v in V - {1}:
 for (i, v) in product(R, V - {1}):
     m += (
         Primary[i, v] <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
-        "nextPrimaryOnlyIfEnoughCV(%s,%s)" % (i, v),
+        f"nextPrimaryOnlyIfEnoughCV({i},{v})",
     )
 
 """
