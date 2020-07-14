@@ -1,4 +1,5 @@
 import sys
+import random
 from enum import Enum
 from drawer import TikzDrawer
 
@@ -25,6 +26,9 @@ class ArrowMessage(object):
     def __str__(self):
         return f"{self.arrow_message_type.name}({self.start_time}, {self.node}, " \
                f"{self.end_time}, {self.destination}, {self.view})"
+
+    def is_loop(self):
+        return self.node == self.destination and self.start_time == self.end_time
 
 
 class PackMessage(object):
@@ -121,12 +125,16 @@ class ExecutionDraw(object):
         add_recv_msg(self.views, view_size, ArrowMessageType.Commit, recv_commit)
         add_recv_msg(self.views, view_size, ArrowMessageType.CV, recv_cv)
 
-    def draw_tikzpicture(self, view_title=True, subtitle=True, first_block=1, out=sys.stdout):
+    def draw_tikzpicture(
+            self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
+            primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]), out=sys.stdout,
+    ):
+        random.seed(0)
         send_receive_variables_options = {
             ArrowMessageType.PrepReq: ['thick', '->', 'color=blue'],
             ArrowMessageType.PrepRes: ['thick', '->', 'color=green'],
             ArrowMessageType.Commit: ['thick', '->', 'color=yellow'],
-            ArrowMessageType.CV: ['thick', '->', 'color=red'],
+            ArrowMessageType.CV: ['thick', '->', 'color=red,dashed'],
         }
         with TikzDrawer(out) as my_drawer:
             if view_title:
@@ -138,6 +146,7 @@ class ExecutionDraw(object):
                 my_drawer.line((1, node), (len(self.views) * self.view_size, node), ["thick", "dashed"])
 
             block_num = first_block
+
             for view_num in sorted(self.views.keys()):
                 view = self.views[view_num]
                 my_drawer.node(f"$Pr.^{view.primary}$", ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5))
@@ -155,14 +164,21 @@ class ExecutionDraw(object):
 
                 for _, arrow in view.packs.items():
                     for arrow in arrow.arrows():
-                        my_drawer.line(
-                            (arrow.start_time, arrow.node), (arrow.end_time, arrow.destination),
-                            send_receive_variables_options[arrow.arrow_message_type]
-                        )
+                        if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
+                                and not (arrow.node == self.views[arrow.view].primary and
+                                        arrow.arrow_message_type in primary_ignore_messages):
+                            first_val = random.uniform(-.1, .1) if rand_pos else 0
+                            second_val = random.uniform(-.1, .1) if rand_pos else 0
+                            my_drawer.line(
+                                (arrow.start_time, arrow.node),
+                                (arrow.end_time + first_val, arrow.destination + second_val),
+                                send_receive_variables_options[arrow.arrow_message_type]
+                            )
 
             if subtitle:
                 it = 2
                 for arrow_type, arrow_opt in send_receive_variables_options.items():
-                    my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
-                    my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it))
-                    it += 1
+                    if arrow_type not in ignore_messages:
+                        my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
+                        my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it))
+                        it += 1
