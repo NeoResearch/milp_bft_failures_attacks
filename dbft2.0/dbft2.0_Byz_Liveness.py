@@ -458,53 +458,30 @@ for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
         >= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 <= v) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
-        "assertSendCVIfNotCommitAndYesPrimary(%s,%s)" % (i, v),
+        f"assertSendCVIfNotCommitAndYesPrimary({i},{v})",
     )
 
 for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
-    m += (
-        SendPrepReq[t, i, v]
-        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noPrepReqIfCV(%s,%s,%s)" % (i, v, t),
-    )
-    m += (
-        SendPrepRes[t, i, v]
-        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noPrepResIfCV(%s,%s,%s)" % (i, v, t),
-    )
-    m += (
-        SendCommit[t, i, v]
-        <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noCommitIfCV(%s,%s,%s)" % (i, v, t),
-    )
-    # LINKS Commit and LIMITS - analogous as the constrains for SendCV
-    m += (
-        SendCV[t, i, v]
-        <= 1 - xsum(SendCommit[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noCVIfCommit(%s,%s,%s)" % (i, v, t),
-    )
-    # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
-    m += (
-        SendPrepReq[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noBlockYesPrepReq(%s,%s,%s)" % (i, v, t),
-    )
-    m += (
-        SendPrepRes[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noBlockYesPrepRes(%s,%s,%s)" % (i, v, t),
-    )
-    m += (
-        SendCommit[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noBlockYesCommit(%s,%s,%s)" % (i, v, t),
-    )
-    m += (
-        SendCV[t, i, v]
-        <= 1 - xsum(BlockRelay[t2, i, v] for t2 in T if 1 < t2 <= t),
-        "noBlockYesCV(%s,%s,%s)" % (i, v, t),
-    )
+    add_var_loop = [
+        (SendPrepReq, SendCV, "noPrepReqIfCV"),
+        (SendPrepRes, SendCV, "noPrepResIfCV"),
+        (SendCommit, SendCV, "noCommitIfCV"),
+        # LINKS Commit and LIMITS - analogous as the constrains for SendCV
+        (SendCV, SendCommit, "noCVIfCommit"),
+        # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
+        (SendPrepReq, BlockRelay, "noBlockYesPrepReq"),
+        (SendPrepRes, BlockRelay, "noBlockYesPrepRes"),
+        (SendCommit, BlockRelay, "noBlockYesCommit"),
+        (SendCV, BlockRelay, "noBlockYesCV"),
+    ]
+    for it in add_var_loop:
+        send_var, send_var2, it_name = it
+        m += (
+            send_var[t, i, v]
+            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            f"{it_name}({i},{v},{t})",
+        )
 
 for (i, v) in product(R_OK, V - {1}):
     # LINKS BlockRelayed and LIMITS in past views
@@ -513,42 +490,23 @@ for (i, v) in product(R_OK, V - {1}):
         <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
         "noBlockOldViewsYesPrimary(%s,%s)" % (i, v),
     )
-    m += (
-        xsum(SendPrepReq[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noBlockOldViewsYesPrepReq(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendPrepRes[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noBlockOldViewsYesPrepRes(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCommit[t, i, v] for t in T - {1})
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noBlockOldViewsYesCommit(%s,%s)" % (i, v),
-    )
-    # LINKS Commit and LIMITS in past views
-    m += (
-        xsum(SendPrepReq[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noCommitOldViewsYesPrepReq(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendPrepRes[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noCommitOldViewsYesPrepRes(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCommit[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noCommitOldViewsYesCommit(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCV[t, i, v] for t in T - {1})
-        <= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
-        "noCommitOldViewsYesCV(%s,%s)" % (i, v),
-    )
+    add_var_loop = [
+        (SendPrepReq, BlockRelay, "noBlockOldViewsYesPrepReq"),
+        (SendPrepRes, BlockRelay, "noBlockOldViewsYesPrepRes"),
+        (SendCommit, BlockRelay, "noBlockOldViewsYesCommit"),
+        # LINKS Commit and LIMITS in past views
+        (SendPrepReq, SendCommit, "noCommitOldViewsYesPrepReq"),
+        (SendPrepRes, SendCommit, "noCommitOldViewsYesPrepRes"),
+        (SendCommit, SendCommit, "noCommitOldViewsYesCommit"),
+        (SendCV, SendCommit, "noCommitOldViewsYesCV"),
+    ]
+    for it in add_var_loop:
+        send_var, relay_var, it_name = it
+        m += (
+            xsum(send_var[t, i, v] for t in T - {1})
+            <= 1 - xsum(relay_var[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
+            f"{it_name}({i},{v})",
+        )
 
 """
 CALCULATION OF AUXILIARY VARIABLES
