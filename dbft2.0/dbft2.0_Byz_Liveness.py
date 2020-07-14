@@ -560,21 +560,21 @@ drawing_file_name = \
     f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
 with open(f"{drawing_file_name}.out", 'w') as sol_out:
     if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
-        sol_out.write('\nsolution:')
+        sol_out.write('solution:\n')
         for v in m.vars:
             if abs(v.x) > 1e-6:  # only printing non-zeros
-                sol_out.write(f'{v.name} : {v.x}')
+                sol_out.write(f'{v.name} : {v.x}\n')
 
-    sol_out.write('\n\n========= DETAILED SOLUTION =========')
+    sol_out.write('\n\n========= DETAILED SOLUTION =========\n\n')
     for v in V:
         tTotal = (v - 1) * tMax
-        sol_out.write(f'VIEW {v}')
+        sol_out.write(f'VIEW {v}\n')
         for i in R:
-            sol_out.write(f'\tValidator {i}')
+            sol_out.write(f'\tValidator {i}\n')
             if is_selected(Primary[i, v]):
-                sol_out.write('\t\tPRIMARY')
+                sol_out.write('\t\tPRIMARY\n')
             else:
-                sol_out.write('\t\tBACKUP')
+                sol_out.write('\t\tBACKUP\n')
             countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
             for t in T:
                 print_loop = [
@@ -586,29 +586,29 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
                 for it in print_loop:
                     send_name, send_var, recv_name, recv_var, counter = it
                     if is_selected(send_var[t, i, v]):
-                        sol_out.write(f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}')
+                        sol_out.write(f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}\n')
                     for j in R:
                         if is_selected(recv_var[t, i, j, v]):
                             counter += 1
-                            sol_out.write(f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}')
+                            sol_out.write(f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
 
                 if is_selected(BlockRelay[t, i, v]):
-                    sol_out.write(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}')
+                    sol_out.write(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}\n')
             sol_out.write(
                 f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
-                f'Commit={countRecvCommit} CV={countRecvCV}'
+                f'Commit={countRecvCommit} CV={countRecvCV}\n'
             )
-    sol_out.write('========= DETAILED SOLUTION =========\n\n')
+    sol_out.write('========= DETAILED SOLUTION =========\n\n\n')
 
     if status == OptimizationStatus.OPTIMAL:
-        sol_out.write(f'optimal solution cost {m.objective_value} found')
+        sol_out.write(f'optimal solution cost {m.objective_value} found\n')
     elif status == OptimizationStatus.FEASIBLE:
-        sol_out.write(f'sol.cost {m.objective_value} found, best possible: {m.objective_bound}')
+        sol_out.write(f'sol.cost {m.objective_value} found, best possible: {m.objective_bound}\n')
     elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-        sol_out.write(f'no feasible solution found, upper bound is: {m.objective_bound}')
+        sol_out.write(f'no feasible solution found, upper bound is: {m.objective_bound}\n')
 
     for k in range(m.num_solutions):
-        sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}')
+        sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}\n')
     sol_out.write("\n")
 
 
