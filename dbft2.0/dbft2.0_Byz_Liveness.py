@@ -39,7 +39,7 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 print('Total number of arguments:', format(len(sys.argv)))
 
 # Print all arguments
-print('Argument List:', str(sys.argv))
+print(f'Argument List: {sys.argv}')
 
 if len(sys.argv) > 1:
     minMax = int(sys.argv[1])
@@ -52,7 +52,7 @@ if len(sys.argv) > 2:
 if len(sys.argv) > 3:
     numberOfRoundsWeight = int(sys.argv[3])
     print('numberOfRoundsWeight', str(numberOfRoundsWeight))
-# =================== Optional Parameters  ========================= 
+# =================== Optional Parameters  =========================
 
 # Total number of nodes
 N = 4
@@ -75,6 +75,23 @@ T = set(range(1, tMax + 1))
 m = Model()
 m.SearchEmphasis = 2
 m.max_gap = 0.005
+
+
+def create_decision_var_3(name):
+    return {
+        (t, i, v): m.add_var(f"{name}({t},{i},{v})", var_type=BINARY)
+        for (t, i, v) in product(T, R, V)
+    }
+
+
+def create_decision_var_4(name):
+    return {
+        (t, i, j, v): m.add_var(
+            f"{name}({t},{i},{j},{v})", var_type=BINARY
+        )
+        for (t, i, j, v) in product(T, R, R, V)
+    }
+
 
 """
 Decision variables
