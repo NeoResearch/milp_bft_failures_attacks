@@ -13,3 +13,5 @@ Here you may find two models:
 * T3 - RECEIVED PREPREQ - SEND PREPRESPONSE
 * T4 - RECEIVED M PREPRESPONSE - SEND COMMIT
 * T5 - RECEIVED M COMMIT - RELAYED BLOCK
+
+For using automatic graph generation with Python file install `sudo apt-get install texlive-latex-base`
