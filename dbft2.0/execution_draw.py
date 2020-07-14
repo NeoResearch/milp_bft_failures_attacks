@@ -137,7 +137,7 @@ class ExecutionDraw(object):
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
             primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]),
-            generate_full_latex: bool = True, circle_all_send: bool = False,
+            generate_full_latex: bool = True, circle_all_send: bool = False, circle_radius=.08,
             out=sys.stdout,
     ):
         random.seed(0)
@@ -164,6 +164,16 @@ class ExecutionDraw(object):
 
             block_num = first_block
 
+            circles = {}
+
+            def add_circle(circle_pos, config=[]):
+                circle_radius_val = circle_radius + .03 * circles.get(circle_pos, 0)
+                my_drawer.circle(
+                    circle_pos,
+                    config + [f"radius={circle_radius_val}"]
+                )
+                circles[circle_pos] = circles.get(circle_pos, 0) + 1
+
             for view_num in sorted(self.views.keys()):
                 view = self.views[view_num]
                 if view.primary:
@@ -181,10 +191,7 @@ class ExecutionDraw(object):
                         ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
                         []
                     )
-                    my_drawer.circle(
-                        ((relay.view - 1) * self.view_size + relay.time, relay.node),
-                        ["radius=.08"]
-                    )
+                    add_circle(((relay.view - 1) * self.view_size + relay.time, relay.node))
                 if inc_block:
                     block_num += 1
 
@@ -205,9 +212,9 @@ class ExecutionDraw(object):
 
                     if pack.view in self.views:
                         if circle_all_send or (len(draw_circle) == 1 and pack.node in draw_circle):
-                            my_drawer.circle(
+                            add_circle(
                                 (pack.t, pack.node),
-                                [send_receive_variables_options[pack.arrow_message_type][-1]] + ["radius=.08"]
+                                [send_receive_variables_options[pack.arrow_message_type][-1]]
                             )
 
             if subtitle:
