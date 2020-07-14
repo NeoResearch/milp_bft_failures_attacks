@@ -600,6 +600,7 @@ if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE
 
 print('\n\n========= DETAILED SOLUTION =========')
 for v in V:
+    tTotal = (v-1)*tMax;
     print(f'VIEW {v}')
     for i in R:
         print(f'\tValidator {i}')
@@ -610,32 +611,31 @@ for v in V:
         countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
         for t in T:
             if is_selected(SendPrepReq[t, i, v]):
-                print(f'\t\t\t{i} SendPrepReq in {t}/{t+v*tMax} at {v}')
+                print(f'\t\t\t{i} SendPrepReq in {t}/{t+tTotal} at {v}')
             for j in R:
                 if is_selected(RecvPrepReq[t, i, j, v]):
                     countRecvPrepReq += 1
-                    print(
-                        f'\t\t\t\t{i} RecvPrepReq in {t}/{t+v*tMax} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvPrepReq in {t}/{t+tTotal} from {j} at {v}')
             if is_selected(SendPrepRes[t, i, v]):
-                print(f'\t\t\t{i} SendPrepRes in {t}/{t+v*tMax} at {v}')
+                print(f'\t\t\t{i} SendPrepRes in {t}/{t+tTotal} at {v}')
             for j in R:
                 if is_selected(RecvPrepResp[t, i, j, v]):
                     countRecvPrepRes += 1
-                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t+v*tMax} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t+tTotal} from {j} at {v}')
             if is_selected(SendCommit[t, i, v]):
-                print(f'\t\t\t{i} SendCommit in {t}/{t+v*tMax} at {v}')
+                print(f'\t\t\t{i} SendCommit in {t}/{t+tTotal} at {v}')
             for j in R:
                 if is_selected(RecvCommit[t, i, j, v]):
                     countRecvCommit += 1
-                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t+v*tMax} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t+tTotal} from {j} at {v}')
             if is_selected(SendCV[t, i, v]):
-                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+v*tMax, v))
+                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t+tTotal, v))
             for j in R:
                 if is_selected(RecvCV[t, i, j, v]):
                     countRecvCV += 1
-                    print(f'\t\t\t\t{i} RecvCV in {t}/{t+v*tMax} from {j} at {v}')
+                    print(f'\t\t\t\t{i} RecvCV in {t}/{t+tTotal} from {j} at {v}')
             if is_selected(BlockRelay[t, i, v]):
-                print(f'\t\t\t{i} BlockRelay in {t}/{t+v*tMax} at {v}')
+                print(f'\t\t\t{i} BlockRelay in {t}/{t+tTotal} at {v}')
         print(f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
 print('========= DETAILED SOLUTION =========\n\n')
 
