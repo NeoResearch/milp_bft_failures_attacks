@@ -43,11 +43,19 @@ class PackMessage(object):
             yield ArrowMessage(self.arrow_message_type, self.t, self.node, self.view, time_deliver, to)
 
 
+class BlockRelay(object):
+    def __init__(self, t, node, view):
+        self.time = t
+        self.node = node
+        self.view = view
+
+
 class View(object):
     def __init__(self, number, primary):
         self.number = number
         self.primary = primary
         self.packs = {}
+        self.block_relay = []
 
 
 def is_selected(the_var: object):
@@ -59,7 +67,7 @@ class ExecutionDraw(object):
             self, view_size: int, n: int, f: int, m: int,
             send_prep_req: dict, send_prep_res: dict, send_commit: dict, send_cv: dict,
             recv_prep_req: dict, recv_prep_res: dict, recv_commit: dict, recv_cv: dict,
-            primary: dict
+            primary: dict, block_relays: dict
     ):
         self.view_size = view_size
         self.n = n
@@ -71,6 +79,11 @@ class ExecutionDraw(object):
             if is_selected(variable):
                 node, view = it
                 self.views[view] = View(view, node)
+
+        for it, variable in block_relays.items():
+            if is_selected(variable):
+                t, node, view = it
+                self.views[view].block_relay.append(BlockRelay(t, node, view))
 
         def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
             for it, variable in values.items():
@@ -108,7 +121,7 @@ class ExecutionDraw(object):
         add_recv_msg(self.views, view_size, ArrowMessageType.Commit, recv_commit)
         add_recv_msg(self.views, view_size, ArrowMessageType.CV, recv_cv)
 
-    def draw_tikzpicture(self, view_title=True, subtitle=True, out=sys.stdout):
+    def draw_tikzpicture(self, view_title=True, subtitle=True, first_block=1, out=sys.stdout):
         send_receive_variables_options = {
             ArrowMessageType.PrepReq: ['thick', '->', 'color=blue'],
             ArrowMessageType.PrepRes: ['thick', '->', 'color=green'],
@@ -116,19 +129,31 @@ class ExecutionDraw(object):
             ArrowMessageType.CV: ['thick', '->', 'color=red'],
         }
         with TikzDrawer(out) as my_drawer:
-            for _, view in self.views.items():
-                my_drawer.node(f"$Pr.^{view.primary}$", ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5))
+            if view_title:
+                for view in range(len(self.views)):
+                    my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
 
             for node in range(1, self.n + 1):
                 my_drawer.node(f"{node}", (0, node))
                 my_drawer.line((1, node), (len(self.views) * self.view_size, node), ["thick", "dashed"])
 
-            if view_title:
-                for view in range(len(self.views)):
-                    my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
+            block_num = first_block
+            for view_num in sorted(self.views.keys()):
+                view = self.views[view_num]
+                my_drawer.node(f"$Pr.^{view.primary}$", ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5))
 
-            for view_num, the_view in self.views.items():
-                for _, arrow in the_view.packs.items():
+                inc_block = False
+                for relay in view.block_relay:
+                    inc_block = True
+                    my_drawer.node(
+                        f"relay #{block_num}",
+                        ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
+                        []
+                    )
+                if inc_block:
+                    block_num += 1
+
+                for _, arrow in view.packs.items():
                     for arrow in arrow.arrows():
                         my_drawer.line(
                             (arrow.start_time, arrow.node), (arrow.end_time, arrow.destination),

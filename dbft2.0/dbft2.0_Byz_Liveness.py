@@ -656,7 +656,7 @@ execution_draw = ExecutionDraw(
     tMax, N, f, M,
     SendPrepReq, SendPrepRes, SendCommit, SendCV,
     RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
-    Primary,
+    Primary, BlockRelay
 )
 execution_draw.draw_tikzpicture()
 print("")
