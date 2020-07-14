@@ -319,22 +319,18 @@ MARK A PAYLOAD AS RECEIVED ONLY ONCE PER VIEW
 =======================
 """
 for (i, j, v) in product(R, R, V):
-    m += (
-        xsum(RecvPrepReq[t, i, j, v] for t in T - {1}) <= 1,
-        "rcvdPrepReqOO(%s,%s,%s)" % (i, j, v),
-    )
-    m += (
-        xsum(RecvPrepResp[t, i, j, v] for t in T - {1}) <= 1,
-        "rcvdPrepResOO(%s,%s,%s)" % (i, j, v),
-    )
-    m += (
-        xsum(RecvCommit[t, i, j, v] for t in T - {1}) <= 1,
-        "rcvdCommitOO(%s,%s,%s)" % (i, j, v),
-    )
-    m += (
-        xsum(RecvCV[t, i, j, v] for t in T - {1}) <= 1,
-        "rcvdCVOO(%s,%s,%s)" % (i, j, v),
-    )
+    add_var_loop = [
+        (RecvPrepReq, "rcvdPrepReqOO"),
+        (RecvPrepResp, "rcvdPrepResOO"),
+        (RecvCommit, "rcvdCommitOO"),
+        (RecvCV, "rcvdCVOO"),
+    ]
+    for it in add_var_loop:
+        it_var, it_name = it
+        m += (
+            xsum(it_var[t, i, j, v] for t in T - {1}) <= 1,
+            f"{it_name}({i},{j},{v})",
+        )
 
 """
 AUXILIARY BLOCK RELAYED
@@ -344,12 +340,12 @@ for (v) in V:
     m += (
         blockRelayed[v]
         <= xsum(BlockRelay[t, i, v] for t in T - {1} for i in R),
-        "blockRelayedOnlyIfNodeRelay(%s)" % (v),
+        f"blockRelayedOnlyIfNodeRelay({v})",
     )
     m += (
         blockRelayed[v] * N
         >= xsum(BlockRelay[t, i, v] for t in T - {1} for i in R),
-        "blockRelayedCounterForced(%s)" % (v),
+        f"blockRelayedCounterForced({v})",
     )
 
 """
@@ -455,7 +451,7 @@ for i in R_OK:
     m += (
         xsum(SendCV[t, i, 1] for t in T - {1})
         >= 1 - xsum(SendCommit[t, i, 1] for t in T - {1}),
-        "assertSendCVIfNotSendCommitV1(%s)" % (i),
+        f"assertSendCVIfNotSendCommitV1({i})",
     )
 
 for (i, v) in product(R_OK, V - {1}):
