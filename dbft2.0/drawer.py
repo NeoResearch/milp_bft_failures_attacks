@@ -50,23 +50,23 @@ class TikzDrawer(Drawer):
 		super().__init__(out)
 
 	def __enter__(self) -> Drawer:
-		self.out.write("\\begin{tikzpicture}[yscale=-1]")
+		self.out.write("\\begin{tikzpicture}[yscale=-1]\n")
 		return self
 
 	def __exit__(self, type, value, traceback) -> bool:
 		if value:
 			raise value
-		self.out.write("\\end{tikzpicture}")
+		self.out.write("\\end{tikzpicture}\n")
 		return True
 
 	def node(self, name: str, pos: (int, int), d_options: list = ['draw']):
-		self.out.write(f"\\node{self.gen_options(d_options)} at ({pos[0]},{pos[1]}) {{{name}}};")
+		self.out.write(f"\\node{self.gen_options(d_options)} at ({pos[0]},{pos[1]}) {{{name}}};\n")
 
 	def draw(self, command: str, pos: list, d_options: list, cmd_options: list, tail_options: list):
 		tail_command = f' -- {self.gen_options(tail_options)}' if len(tail_options) > 0 else ''
 		self.out.write(
 			f"\\draw{self.gen_options(d_options)} ({pos[0][0]},{pos[0][1]}) {command}{self.gen_options(cmd_options)}"
-			f"{f'({pos[1][0]},{pos[1][1]})' if len(pos) > 1 else ''}{tail_command};"
+			f"{f'({pos[1][0]},{pos[1][1]})' if len(pos) > 1 else ''}{tail_command};\n"
 		)
 
 	def arc(self, pos: (int, int), d_options: list = [], cmd_options: list = []):
