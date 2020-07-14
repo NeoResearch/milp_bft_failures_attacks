@@ -5,3 +5,4 @@
 *.mst
 **/venv
 **/.idea
+**/__pycache__

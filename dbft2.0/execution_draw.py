@@ -95,7 +95,9 @@ class ExecutionDraw(object):
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, v = it
-                    the_view = view[v]
+                    the_view = view.get(v, View(view, None))
+                    if not the_view.primary:
+                        print(f"The view {the_view.number} has no primary")
                     arrow_message = the_view.packs.get(
                         (message_type, i), PackMessage(message_type, t + (v - 1) * view_size, i, v)
                     )
@@ -153,17 +155,18 @@ class ExecutionDraw(object):
 
             for view_num in sorted(self.views.keys()):
                 view = self.views[view_num]
-                # Converting to start at zero
-                my_drawer.node(
-                    f"$Pr.^{view.primary - 1}$",
-                    ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5)
-                )
+                if view.primary:
+                    # Converting to start at zero
+                    my_drawer.node(
+                        f"$Pr.^{view.primary - 1}$",
+                        ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5)
+                    )
 
                 inc_block = False
                 for relay in view.block_relay:
                     inc_block = True
                     my_drawer.node(
-                        f"relay #{block_num}",
+                        f"relay \\#{block_num}",
                         ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
                         []
                     )
