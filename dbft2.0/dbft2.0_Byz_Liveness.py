@@ -30,8 +30,8 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 # MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds   
 
 
-minimization = bool(get_args_value("minimization", False))
-maximization = bool(get_args_value("maximization", False))
+minimization = bool(get_args_value("minimization", False, True))
+maximization = bool(get_args_value("maximization", False, True))
 if minimization:
     maximization = False
 if maximization:
@@ -615,9 +615,9 @@ with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     )
     view_title = bool(get_args_value("view_title", True))
     first_block = int(get_args_value("first_block", 1))
-    rand_pos = bool(get_args_value("rand_pos", False))
-    generate_full_latex = bool(get_args_value("generate_full_latex", True))
-    circle_all_send = bool(get_args_value("circle_all_send", False))
+    rand_pos = bool(get_args_value("rand_pos", False, True))
+    generate_full_latex = bool(get_args_value("generate_full_latex", True, True))
+    circle_all_send = bool(get_args_value("circle_all_send", False, True))
     execution_draw.draw_tikzpicture(
         view_title=view_title, first_block=first_block, rand_pos=rand_pos,
         generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
