@@ -4,20 +4,6 @@ from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from datetime import datetime
 import sys
 
-# =================== Optional Parameters  =========================
-# EXAMPLES
-# python3 dbft2.0_Byz_Liveness.py 0 1000 100
-# MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
-# python3 dbft2.0_Byz_Liveness.py -1 1000 -100
-# MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
-
-# Minimization as Default
-minMax = 0
-# default weight hardcoded
-blocksWeight = 1000
-numberOfRoundsWeight = 100
-
-
 def get_args_value(name: str, default=None, is_bool: bool = False):
     if f"--{name}" in sys.argv:
         if is_bool:
@@ -35,32 +21,39 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
     return None
 
 
-# Print total number of arguments
-print('Total number of arguments:', format(len(sys.argv)))
+# =================== Optional Parameters  =========================
+# EXAMPLES
+# python3 dbft2.0_Byz_Liveness.py --minimization --bWeight=1000 --nRWeight=100
+# MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
+# python3 dbft2.0_Byz_Liveness.py --maximization --bWeight=1000 --nRWeight=-100
+# MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds   
+
+
+minimization = bool(get_args_value("minimization", False))
+maximization = bool(get_args_value("maximization", False))
+if minimization == True:
+    maximization = False
+if maximization == True:
+    minimization = False    
+#blocksWeight
+blocksWeight = int(get_args_value("bWeight", 1000))
+#numberOfRoundsWeight
+numberOfRoundsWeight = int(get_args_value("nRWeight", 100))
 
 # Print all arguments
-print(f'Argument List: {sys.argv}')
-
-if len(sys.argv) > 1:
-    minMax = int(sys.argv[1])
-    if minMax == 1:
-        numberOfRoundsWeight = numberOfRoundsWeight * -1
-    print('MinMax', str(minMax))
-if len(sys.argv) > 2:
-    blocksWeight = int(sys.argv[2])
-    print('blocksWeight', str(blocksWeight))
-if len(sys.argv) > 3:
-    numberOfRoundsWeight = int(sys.argv[3])
-    print('numberOfRoundsWeight', str(numberOfRoundsWeight))
+print(f'\nTotal {len(sys.argv)} and argument List: {sys.argv}')
+print(f'minimization={minimization} blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # =================== Optional Parameters  =========================
 
 # Total number of nodes
-N = 4
+N = int(get_args_value("N", 4))
 # number of allowed faulty nodes
 f = int((N - 1) / 3)
 # safe number of honest nodes
 M = 2 * f + 1
-tMax = 8
+# Discretization per round (view)
+tMax = int(get_args_value("tMax", 8))
+
 
 print(f'Total Number of Nodes is N={N}, with f={f} and honest M={M} and tMax={tMax}\n')
 
@@ -526,10 +519,10 @@ OBJ FUNCTION
 """
 
 # For Minimization - Default
-if not minMax:
+if minimization:
     m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
     print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
-if minMax:
+if not minimization:
     m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
     print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
@@ -556,7 +549,7 @@ status = m.optimize(max_seconds=600)
 drawing_file_name = \
     f"sol" \
     f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
-    f"_MinMax_{minMax}_blocksWeight_{blocksWeight}_numberOfRoundsWeight_{numberOfRoundsWeight}" \
+    f"_Min_{minimization}_blocksWeight_{blocksWeight}_numberOfRoundsWeight_{numberOfRoundsWeight}" \
     f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
 with open(f"{drawing_file_name}.out", 'w') as sol_out:
     if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
