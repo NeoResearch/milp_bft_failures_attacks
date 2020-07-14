@@ -616,74 +616,66 @@ m.write('a.lp')
 
 status = m.optimize(max_seconds=600)
 
-if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
-    print('\nsolution:')
-    for v in m.vars:
-        if abs(v.x) > 1e-6:  # only printing non-zeros
-            print(f'{v.name} : {v.x}')
-
-print('\n\n========= DETAILED SOLUTION =========')
-for v in V:
-    tTotal = (v - 1) * tMax
-    print(f'VIEW {v}')
-    for i in R:
-        print(f'\tValidator {i}')
-        if is_selected(Primary[i, v]):
-            print('\t\tPRIMARY')
-        else:
-            print('\t\tBACKUP')
-        countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
-        for t in T:
-            if is_selected(SendPrepReq[t, i, v]):
-                print(f'\t\t\t{i} SendPrepReq in {t}/{t + tTotal} at {v}')
-            for j in R:
-                if is_selected(RecvPrepReq[t, i, j, v]):
-                    countRecvPrepReq += 1
-                    print(f'\t\t\t\t{i} RecvPrepReq in {t}/{t + tTotal} from {j} at {v}')
-            if is_selected(SendPrepRes[t, i, v]):
-                print(f'\t\t\t{i} SendPrepRes in {t}/{t + tTotal} at {v}')
-            for j in R:
-                if is_selected(RecvPrepResp[t, i, j, v]):
-                    countRecvPrepRes += 1
-                    print(f'\t\t\t\t{i} RecvPrepResp in {t}/{t + tTotal} from {j} at {v}')
-            if is_selected(SendCommit[t, i, v]):
-                print(f'\t\t\t{i} SendCommit in {t}/{t + tTotal} at {v}')
-            for j in R:
-                if is_selected(RecvCommit[t, i, j, v]):
-                    countRecvCommit += 1
-                    print(f'\t\t\t\t{i} RecvCommit in {t}/{t + tTotal} from {j} at {v}')
-            if is_selected(SendCV[t, i, v]):
-                print('\t\t\t{} SendCV in {}/{} at {}'.format(i, t, t + tTotal, v))
-            for j in R:
-                if is_selected(RecvCV[t, i, j, v]):
-                    countRecvCV += 1
-                    print(f'\t\t\t\t{i} RecvCV in {t}/{t + tTotal} from {j} at {v}')
-            if is_selected(BlockRelay[t, i, v]):
-                print(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}')
-        print(
-            f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} Commit={countRecvCommit} CV={countRecvCV}')
-print('========= DETAILED SOLUTION =========\n\n')
-
-if status == OptimizationStatus.OPTIMAL:
-    print(f'optimal solution cost {m.objective_value} found')
-elif status == OptimizationStatus.FEASIBLE:
-    print('sol.cost {} found, best possible: {}'.format(
-        m.objective_value, m.objective_bound))
-elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-    print(f'no feasible solution found, upper bound is: {m.objective_bound}')
-
-for k in range(m.num_solutions):
-    print(f'Solution {k} with Blocks {m.objective_values[k]}')
-
-print("\n")
-
-
 drawing_file_name = \
     f"sol" \
     f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
     f"_MinMax_{minMax}_blocksWeight_{blocksWeight}_numberOfRoundsWeight_{numberOfRoundsWeight}" \
     f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
-with open(f"{drawing_file_name}.tex", 'w') as out:
+with open(f"{drawing_file_name}.out", 'w') as sol_out:
+    if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
+        sol_out.write('\nsolution:')
+        for v in m.vars:
+            if abs(v.x) > 1e-6:  # only printing non-zeros
+                sol_out.write(f'{v.name} : {v.x}')
+
+    sol_out.write('\n\n========= DETAILED SOLUTION =========')
+    for v in V:
+        tTotal = (v - 1) * tMax
+        sol_out.write(f'VIEW {v}')
+        for i in R:
+            sol_out.write(f'\tValidator {i}')
+            if is_selected(Primary[i, v]):
+                sol_out.write('\t\tPRIMARY')
+            else:
+                sol_out.write('\t\tBACKUP')
+            countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
+            for t in T:
+                print_loop = [
+                    ("SendPrepReq", SendPrepReq, "RecvPrepReq", RecvPrepReq, countRecvPrepReq),
+                    ("SendPrepRes", SendPrepRes, "RecvPrepResp", RecvPrepResp, countRecvPrepRes),
+                    ("SendCommit", SendCommit, "RecvCommit", RecvCommit, countRecvCommit),
+                    ("SendCV", SendCV, "RecvCV", RecvCV, countRecvCV),
+                ]
+                for it in print_loop:
+                    send_name, send_var, recv_name, recv_var, counter = it
+                    if is_selected(send_var[t, i, v]):
+                        sol_out.write(f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}')
+                    for j in R:
+                        if is_selected(recv_var[t, i, j, v]):
+                            counter += 1
+                            sol_out.write(f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}')
+
+                if is_selected(BlockRelay[t, i, v]):
+                    sol_out.write(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}')
+            sol_out.write(
+                f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
+                f'Commit={countRecvCommit} CV={countRecvCV}'
+            )
+    sol_out.write('========= DETAILED SOLUTION =========\n\n')
+
+    if status == OptimizationStatus.OPTIMAL:
+        sol_out.write(f'optimal solution cost {m.objective_value} found')
+    elif status == OptimizationStatus.FEASIBLE:
+        sol_out.write(f'sol.cost {m.objective_value} found, best possible: {m.objective_bound}')
+    elif status == OptimizationStatus.NO_SOLUTION_FOUND:
+        sol_out.write(f'no feasible solution found, upper bound is: {m.objective_bound}')
+
+    for k in range(m.num_solutions):
+        sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}')
+    sol_out.write("\n")
+
+
+with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     execution_draw = ExecutionDraw(
         tMax, N, f, M,
         SendPrepReq, SendPrepRes, SendCommit, SendCV,
@@ -698,7 +690,7 @@ with open(f"{drawing_file_name}.tex", 'w') as out:
     execution_draw.draw_tikzpicture(
         view_title=view_title, first_block=first_block, rand_pos=rand_pos,
         generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
-        out=out,
+        out=tex_out,
     )
 
 generate_pdf_file(drawing_file_name)
