@@ -215,17 +215,17 @@ for (t, i, v) in product(T - {1}, R, V):
     m += (
         SendPrepRes[t, i, v]
         <= xsum(RecvPrepReq[t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        "prepRespSendOptionally(%s,%s,%s)" % (t, i, v),
+        f"prepRespSendOptionally({t},{i},{v})",
     )
     m += (
         SendCommit[t, i, v]
         <= (1 / M) * xsum(RecvPrepResp[t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        "commitSentIfMPrepRespOptionally(%s,%s,%s)" % (t, i, v),
+        f"commitSentIfMPrepRespOptionally({t},{i},{v})",
     )
     m += (
         BlockRelay[t, i, v]
         <= (1 / M) * xsum(RecvCommit[t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        "blockRelayOptionallyOnlyIfEnoughCommits(%s,%s,%s)" % (t, i, v),
+        f"blockRelayOptionallyOnlyIfEnoughCommits({t},{i},{v})",
     )
 
 """
@@ -236,24 +236,20 @@ for (i, v) in product(R, V):
     # Note PrepReq deals with Primary, thus, it also ensures single PreReq and discard any other except from Primary
     m += (
         xsum(SendPrepReq[t, i, v] for t in T - {1}) <= Primary[i, v],
-        "prepReqOOIfPrimary(%s,%s)" % (i, v),
+        f"prepReqOOIfPrimary({i},{v})",
     )
-    m += (
-        xsum(SendPrepRes[t, i, v] for t in T - {1}) <= 1,
-        "sendPrepResOO(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCommit[t, i, v] for t in T - {1}) <= 1,
-        "sendCommitOO(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(SendCV[t, i, v] for t in T - {1}) <= 1,
-        "sendCVOO(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(BlockRelay[t, i, v] for t in T - {1}) <= 1,
-        "blockRelayOO(%s,%s)" % (i, v),
-    )
+    add_var_loop = [
+        (SendPrepRes, "sendPrepResOO"),
+        (SendCommit, "sendCommitOO"),
+        (SendCV, "sendCVOO"),
+        (BlockRelay, "blockRelayOO"),
+    ]
+    for it in add_var_loop:
+        it_var, it_name = it
+        m += (
+            xsum(it_var[t, i, v] for t in T - {1}) <= 1,
+            f"{it_name}({i},{v})",
+        )
 
 """
 DEFINE WHEN A NODE CAN REGISTER PAYLOAD AS RECEIVED (PrepReq,PrepRes,Commit and CV)
@@ -261,47 +257,36 @@ DEFINE WHEN A NODE CAN REGISTER PAYLOAD AS RECEIVED (PrepReq,PrepRes,Commit and 
 """
 # Self Sended
 for (t, i, v) in product(T - {1}, R, V):
-    m += (
-        RecvPrepReq[t, i, i, v] == SendPrepReq[t, i, v],
-        "prepReqReceivedSS(%s,%s,%s)" % (t, i, v),
-    )
-    m += (
-        RecvPrepResp[t, i, i, v] == SendPrepRes[t, i, v],
-        "prepRespReceivedSS(%s,%s,%s)" % (t, i, v),
-    )
-    m += (
-        RecvCommit[t, i, i, v] == SendCommit[t, i, v],
-        "commitReceivedSS(%s,%s,%s)" % (t, i, v),
-    )
-    m += (
-        RecvCV[t, i, i, v] == SendCV[t, i, v],
-        "cvReceivedSS(%s,%s,%s)" % (t, i, v),
-    )
+    add_var_loop = [
+        (RecvPrepReq, SendPrepReq, "prepReqReceivedSS"),
+        (RecvPrepResp, SendPrepRes, "prepRespReceivedSS"),
+        (RecvCommit, SendCommit, "commitReceivedSS"),
+        (RecvCV, SendCV, "cvReceivedSS"),
+    ]
+    for it in add_var_loop:
+        recv_var, send_var, it_name = it
+        m += (
+            recv_var[t, i, i, v] == send_var[t, i, v],
+            f"{it_name}({t},{i},{v})",
+        )
 
 # Sended by another node J will lag, at least, one interval `t`
 
 for t, i, j, v in product(T - {1}, R, R, V):
     if i != j:
-        m += (
-            RecvPrepReq[t, i, j, v]
-            <= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t),
-            "prepReqReceived(%s,%s,%s,%s)" % (t, i, j, v),
-        )
-        m += (
-            RecvPrepResp[t, i, j, v]
-            <= xsum(SendPrepRes[t2, j, v] for t2 in T if 1 < t2 < t),
-            "prepRespReceived(%s,%s,%s,%s)" % (t, i, j, v),
-        )
-        m += (
-            RecvCommit[t, i, j, v]
-            <= xsum(SendCommit[t2, j, v] for t2 in T if 1 < t2 < t),
-            "commitReceived(%s,%s,%s,%s)" % (t, i, j, v),
-        )
-        m += (
-            RecvCV[t, i, j, v]
-            <= xsum(SendCV[t2, j, v] for t2 in T if 1 < t2 < t),
-            "cvReceived(%s,%s,%s,%s)" % (t, i, j, v),
-        )
+        add_var_loop = [
+            (RecvPrepReq, SendPrepReq, "prepReqReceived"),
+            (RecvPrepResp, SendPrepRes, "prepRespReceived"),
+            (RecvCommit, SendCommit, "commitReceived"),
+            (RecvCV, SendCV, "cvReceived"),
+        ]
+        for it in add_var_loop:
+            recv_var, send_var, it_name = it
+            m += (
+                recv_var[t, i, j, v]
+                <= xsum(send_var[t2, j, v] for t2 in T if 1 < t2 < t),
+                f"{it_name}({t},{i},{j},{v})",
+            )
 
 # Force the node to Received PrepRes & PrepReq along with CV
 # This will help nodes to propose the same block on next view
