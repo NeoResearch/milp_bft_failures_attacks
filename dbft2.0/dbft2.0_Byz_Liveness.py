@@ -718,11 +718,11 @@ with open(f"{drawing_file_name}.tex", 'w') as out:
         RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
         Primary, BlockRelay
     )
-    view_title = get_args_value("view_title", True)
-    first_block = get_args_value("first_block", 1)
-    rand_pos = get_args_value("rand_pos", False)
-    generate_full_latex = get_args_value("generate_full_latex", True)
-    circle_all_send = get_args_value("circle_all_send", False)
+    view_title = bool(get_args_value("view_title", True))
+    first_block = int(get_args_value("first_block", 1))
+    rand_pos = bool(get_args_value("rand_pos", False))
+    generate_full_latex = bool(get_args_value("generate_full_latex", True))
+    circle_all_send = bool(get_args_value("circle_all_send", False))
     execution_draw.draw_tikzpicture(
         view_title=view_title, first_block=first_block, rand_pos=rand_pos,
         generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
