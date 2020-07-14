@@ -30,10 +30,8 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 # MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds   
 
 
-minimization = bool(get_args_value("minimization", False, True))
+minimization = bool(get_args_value("minimization", True, True))
 maximization = bool(get_args_value("maximization", False, True))
-if minimization:
-    maximization = False
 if maximization:
     minimization = False    
 #blocksWeight
@@ -43,7 +41,7 @@ numberOfRoundsWeight = int(get_args_value("nRWeight", 100))
 
 # Print all arguments
 print(f'\nTotal {len(sys.argv)} and argument List: {sys.argv}')
-print(f'minimization={minimization} blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+print(f'minimization={minimization} maximization={maximization} blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # =================== Optional Parameters  =========================
 
 # Total number of nodes
