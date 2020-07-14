@@ -4,6 +4,7 @@ from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from datetime import datetime
 import sys
 
+
 def get_args_value(name: str, default=None, is_bool: bool = False):
     if f"--{name}" in sys.argv:
         if is_bool:
@@ -31,9 +32,9 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 
 minimization = bool(get_args_value("minimization", False))
 maximization = bool(get_args_value("maximization", False))
-if minimization == True:
+if minimization:
     maximization = False
-if maximization == True:
+if maximization:
     minimization = False    
 #blocksWeight
 blocksWeight = int(get_args_value("bWeight", 1000))
