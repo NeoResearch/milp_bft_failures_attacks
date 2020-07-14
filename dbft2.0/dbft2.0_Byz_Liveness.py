@@ -398,21 +398,18 @@ for (i, v) in product(R_OK, V):
         >= Primary[i, v],
         "assertSendPrepReqWithinSimLimit(%s,%s)" % (i, v),
     )
-    m += (
-        xsum(SendPrepRes[t, i, v] for t in T - {1})
-        >= xsum(RecvPrepReq[t, i, j, v] for (t, j) in product(T - {1}, R)),
-        "assertSendPrepResWithinSimLimit(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(2 * SendCommit[t, i, v] for t in T - {1})
-        >= xsum(RecvPrepResp[t, i, j, v] for (t, j) in product(T - {1}, R)) - M + 1,
-        "assertSendCommitWithinSimLimit(%s,%s)" % (i, v),
-    )
-    m += (
-        xsum(2 * BlockRelay[t, i, v] for t in T - {1})
-        >= xsum(RecvCommit[t, i, j, v] for (t, j) in product(T - {1}, R)) - M + 1,
-        "assertBlockRelayWithinSimLimit(%s,%s)" % (i, v),
-    )
+    add_var_loop = [
+        (SendPrepRes, RecvPrepReq, 1, 0, "assertSendPrepResWithinSimLimit"),
+        (SendCommit, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit"),
+        (BlockRelay, RecvCommit, 2, - M + 1, "assertBlockRelayWithinSimLimit"),
+    ]
+    for it in add_var_loop:
+        send_var, recv_var, rate, delta, it_name = it
+        m += (
+            xsum(rate * send_var[t, i, v] for t in T - {1})
+            >= xsum(recv_var[t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
+            f"{it_name}({i},{v})",
+        )
 
 # We assume that honest nodes will only perform an action if view change was approved - no view jumps
 # - not tested if really needed
