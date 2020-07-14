@@ -48,8 +48,8 @@ class Drawer(object):
 
 
 class TikzDrawer(Drawer):
-    def __init__(self, out=sys.stdout):
-        super().__init__(out)
+    def __init__(self, out=sys.stdout, generate_full_latex: bool = True, border: str = "5pt"):
+        super().__init__(out, generate_full_latex, border)
 
     def __enter__(self) -> Drawer:
         if self.generate_full_latex:

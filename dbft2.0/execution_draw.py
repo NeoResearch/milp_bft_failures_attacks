@@ -136,20 +136,26 @@ class ExecutionDraw(object):
 
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
-            primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]), out=sys.stdout,
-            generate_full_latex: bool = True,
+            primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]),
+            generate_full_latex: bool = True, circle_all_send: bool = False,
+            out=sys.stdout,
     ):
         random.seed(0)
         send_receive_variables_options = {
             ArrowMessageType.PrepReq: ['thick', '->', 'color=blue'],
             ArrowMessageType.PrepRes: ['thick', '->', 'color=green'],
             ArrowMessageType.Commit: ['thick', '->', 'color=yellow'],
-            ArrowMessageType.CV: ['thick', '->', 'color=red,dashed'],
+            ArrowMessageType.CV: ['thick', '->', 'dashed', 'color=red'],
         }
-        with TikzDrawer(out) as my_drawer:
-            if view_title:
-                for view in range(len(self.views)):
+        with TikzDrawer(out, generate_full_latex) as my_drawer:
+            for view in range(len(self.views)):
+                if view_title:
                     my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
+                if view > 0:
+                    my_drawer.line(
+                        (view * self.view_size, 0), (view * self.view_size, self.n + 1),
+                        ["thick", "-", "color=lightgray", "dashed"]
+                    )
 
             for node in range(1, self.n + 1):
                 # Converting to start at zero
@@ -178,8 +184,10 @@ class ExecutionDraw(object):
                 if inc_block:
                     block_num += 1
 
-                for _, arrow in view.packs.items():
-                    for arrow in arrow.arrows():
+                for _, pack in view.packs.items():
+                    draw_circle = True
+                    for arrow in pack.arrows():
+                        draw_circle = False
                         if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
                                 and not (arrow.node == self.views[arrow.view].primary and
                                          arrow.arrow_message_type in primary_ignore_messages):
@@ -189,6 +197,13 @@ class ExecutionDraw(object):
                                 (arrow.start_time, arrow.node),
                                 (arrow.end_time + first_val, arrow.destination + second_val),
                                 send_receive_variables_options[arrow.arrow_message_type]
+                            )
+
+                    if pack.view in self.views:
+                        if circle_all_send or draw_circle:
+                            my_drawer.circle(
+                                (pack.t, pack.node),
+                                [send_receive_variables_options[pack.arrow_message_type][-1]] + ["radius=.08"]
                             )
 
             if subtitle:
@@ -202,31 +217,39 @@ class ExecutionDraw(object):
 
 def generate_pdf_file(drawing_file_name: str, remove_logs: bool = True):
     pdflatex_call = ["pdflatex", "-interaction", "nonstopmode"]
-    with subprocess.Popen(
-            pdflatex_call + [f"{drawing_file_name}.tex"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ) as proc:
-        proc.wait()
-        if proc.returncode == 0:
-            if remove_logs:
-                os.remove(f"./{drawing_file_name}.aux")
-                os.remove(f"./{drawing_file_name}.log")
-            return True
-        else:
-            print(f"There was a problem processing the file {drawing_file_name}.tex")
-            stdout = proc.stdout.read()
-            if stdout:
-                print("Standard output")
-                stdout = stdout.decode()
-                print(stdout)
-                if "LaTeX Error: File `standalone.cls' not found" in stdout:
-                    print("You are missing the 'standalone' package.")
-                    print(
-                        "You may need to install 'texlive-latex-extra' with "
-                        "'sudo apt-get install texlive-latex-extra'"
-                    )
-            stderr = proc.stderr.read()
-            if stderr:
-                print("Standard error output")
-                stderr = stderr.decode()
-                print(stderr)
+    try:
+        with subprocess.Popen(
+                pdflatex_call + [f"{drawing_file_name}.tex"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ) as proc:
+            proc.wait()
+            if proc.returncode == 0:
+                if remove_logs:
+                    os.remove(f"./{drawing_file_name}.aux")
+                    os.remove(f"./{drawing_file_name}.log")
+                return True
+            else:
+                print(f"There was a problem processing the file {drawing_file_name}.tex")
+                stdout = proc.stdout.read()
+                if stdout:
+                    print("Standard output")
+                    stdout = stdout.decode()
+                    print(stdout)
+                    if "LaTeX Error: File `standalone.cls' not found" in stdout:
+                        print("You are missing the 'standalone' package.")
+                        print(
+                            "You may need to install 'texlive-latex-extra' with "
+                            "'sudo apt-get install texlive-latex-extra'"
+                        )
+                stderr = proc.stderr.read()
+                if stderr:
+                    print("Standard error output")
+                    stderr = stderr.decode()
+                    print(stderr)
+    except FileNotFoundError as fnf:
+        if 'pdflatex' in f"{fnf}":
+            print("You are missing the 'latex' package.")
+            print(
+                "You may need to install 'latex' with "
+                "'sudo apt-get install texlive-latex-base texlive-latex-extra'"
+            )
     return False
