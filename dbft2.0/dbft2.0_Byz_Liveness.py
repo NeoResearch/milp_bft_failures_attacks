@@ -98,66 +98,35 @@ Decision variables
 ==================
 """
 Primary = {
-    (i, v): m.add_var("Primary(%s,%s)" % (i, v), var_type=BINARY)
+    (i, v): m.add_var(f"Primary({i},{v})", var_type=BINARY)
     for (i, v) in product(R, V)
 }
-SendPrepReq = {
-    (t, i, v): m.add_var("SendPrepReq(%s,%s,%s)" % (t, i, v), var_type=BINARY)
-    for (t, i, v) in product(T, R, V)
-}
-SendPrepRes = {
-    (t, i, v): m.add_var("SendPrepRes(%s,%s,%s)" % (t, i, v), var_type=BINARY)
-    for (t, i, v) in product(T, R, V)
-}
-SendCommit = {
-    (t, i, v): m.add_var("SendCommit(%s,%s,%s)" % (t, i, v), var_type=BINARY)
-    for (t, i, v) in product(T, R, V)
-}
-SendCV = {
-    (t, i, v): m.add_var("SendCV(%s,%s,%s)" % (t, i, v), var_type=BINARY)
-    for (t, i, v) in product(T, R, V)
-}
-BlockRelay = {
-    (t, i, v): m.add_var("BlockRelay(%s,%s,%s)" % (t, i, v), var_type=BINARY)
-    for (t, i, v) in product(T, R, V)
-}
-RecvPrepReq = {
-    (t, i, j, v): m.add_var(
-        "RecvPrepReq(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY
-    )
-    for (t, i, j, v) in product(T, R, R, V)
-}
-RecvPrepResp = {
-    (t, i, j, v): m.add_var(
-        "RecvPrepResp(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY,
-    )
-    for (t, i, j, v) in product(T, R, R, V)
-}
-RecvCommit = {
-    (t, i, j, v): m.add_var(
-        "RecvCommit(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY
-    )
-    for (t, i, j, v) in product(T, R, R, V)
-}
-RecvCV = {
-    (t, i, j, v): m.add_var("RecvCV(%s,%s,%s,%s)" % (t, i, j, v), var_type=BINARY)
-    for (t, i, j, v) in product(T, R, R, V)
-}
+
+SendPrepReq = create_decision_var_3("SendPrepReq")
+SendPrepRes = create_decision_var_3("SendPrepRes")
+SendCommit = create_decision_var_3("SendCommit")
+SendCV = create_decision_var_3("SendCV")
+BlockRelay = create_decision_var_3("BlockRelay")
+
+RecvPrepReq = create_decision_var_4("RecvPrepReq")
+RecvPrepResp = create_decision_var_4("RecvPrepResp")
+RecvCommit = create_decision_var_4("RecvCommit")
+RecvCV = create_decision_var_4("RecvCV")
 
 """
 Auxiliary Variables
 ===================
 """
 totalBlockRelayed = m.add_var("totalBlockRelayed", var_type=INTEGER)
-blockRelayed = {v: m.add_var("blockRelayed(%s)" %
-                             v, var_type=BINARY) for v in V}
+blockRelayed = {v: m.add_var(f"blockRelayed({v})", var_type=BINARY) for v in V}
 lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
 numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
 changeViewRecvPerNodeAndView = {
-    (r, v): m.add_var("changeViewRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
+    (r, v): m.add_var(f"changeViewRecvPerNodeAndView({r},{v})", var_type=INTEGER)
     for (r, v) in product(R, V)
 }
-'''prepReqSendPerNodeAndView = {
+'''
+prepReqSendPerNodeAndView = {
     (r, v): m.add_var("prepReqSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
 }
@@ -188,7 +157,8 @@ commitRecvPerNodeAndView = {
 blockRelayPerNodeAndView = {
     (r, v): m.add_var("blockRelayPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
     for (r, v) in product(R, V)
-}'''
+}
+'''
 
 """
 Time zero constraints
