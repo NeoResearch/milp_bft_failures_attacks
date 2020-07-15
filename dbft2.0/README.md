@@ -6,10 +6,15 @@ This model is based on the [python-mip](https://github.com/coin-or/python-mip/) 
 Executing `python3 dbft2.0_Byz_Liveness.py` will run it in default mode.
 
 ```bash
-python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100
+#--w1 --w2 --w3 weights
+python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100 --w3=0
 # MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
-python3 dbft2.0_Byz_Liveness.py --maximization --w1=1000 --w2=-100
+python3 dbft2.0_Byz_Liveness.py --maximization --w1=1000 --w2=-100 --w3=0
 # MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
+python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100 --w3=-1
+# MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds and -1 for number of msgs sent.
+# In this sense, it will also try to send and receive as much message as possible
+
 # Other options are:
 # generate_full_latex: defines if .pdf files will be generated (TRUE as default)
 --generate_full_latex

@@ -38,10 +38,11 @@ if maximization:
 blocksWeight = int(get_args_value("w1", 1000))
 #numberOfRoundsWeight
 numberOfRoundsWeight = int(get_args_value("w2", 100))
+msgsWeight = int(get_args_value("w3", 0))
 
 # Print all arguments
 print(f'\nTotal {len(sys.argv)} and argument List: {sys.argv}')
-print(f'minimization={minimization} maximization={maximization} blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+print(f'minimization={minimization} maximization={maximization} blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight} msgsWeight={msgsWeight}\n')
 # =================== Optional Parameters  =========================
 
 # Total number of nodes
@@ -118,6 +119,9 @@ totalBlockRelayed = m.add_var("totalBlockRelayed", var_type=INTEGER)
 blockRelayed = {v: m.add_var(f"blockRelayed({v})", var_type=BINARY) for v in V}
 lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
 numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
+totalNumberSendMsg = m.add_var("totalNumberSendMsg", var_type=INTEGER)
+totalNumberRcvdMsg = m.add_var("totalNumberRcvdMsg", var_type=INTEGER)
+totalNumberMsgs = m.add_var("totalNumberMsgs", var_type=INTEGER)
 changeViewRecvPerNodeAndView = create_decision_var_2_rv_integer("changeViewRecvPerNodeAndView")
 
 '''
@@ -494,13 +498,17 @@ for (t, i, v) in product(T, R, V):
 OBJ FUNCTION
 =======================
 """
+if msgsWeight != 0:
+    m += totalNumberSendMsg == xsum(SendPrepReq[t, i, v] + SendPrepRes[t, i, v] + SendCommit[t, i, v] + SendCV[t, i, v]for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
+    m += totalNumberRcvdMsg == xsum(RecvPrepReq[t, i, j, v] + RecvPrepResp[t, i, j, v] + RecvCommit[t, i, j, v] + RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
+    m += totalNumberMsgs == totalNumberSendMsg + totalNumberRcvdMsg, "calcTotalNumberOfMsgs"
 
 # For Minimization - Default
 if minimization:
-    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
+    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
     print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 if not minimization:
-    m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
+    m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
     print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # OTHER POSSIBLE OJECTIVES such as counting total number of messages in order to maximize communication and conflicts
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
