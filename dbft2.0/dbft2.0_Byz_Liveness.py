@@ -531,7 +531,7 @@ status = m.optimize(max_seconds=600)
 drawing_file_name = \
     f"sol" \
     f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
-    f"_Min_{minimization}_blocksWeight_{blocksWeight}_numberOfRoundsWeight_{numberOfRoundsWeight}" \
+    f"_Min_{minimization}_w1_{blocksWeight}_w2_{numberOfRoundsWeight}_w3_{msgsWeight}" \
     f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
 with open(f"{drawing_file_name}.out", 'w') as sol_out:
     if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
