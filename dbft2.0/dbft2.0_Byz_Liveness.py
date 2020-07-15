@@ -24,9 +24,9 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 
 # =================== Optional Parameters  =========================
 # EXAMPLES
-# python3 dbft2.0_Byz_Liveness.py --minimization --bWeight=1000 --nRWeight=100
+# python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100
 # MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
-# python3 dbft2.0_Byz_Liveness.py --maximization --bWeight=1000 --nRWeight=-100
+# python3 dbft2.0_Byz_Liveness.py --maximization --w1=1000 --w2=-100
 # MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds   
 
 
@@ -35,9 +35,9 @@ maximization = bool(get_args_value("maximization", False, True))
 if maximization:
     minimization = False    
 #blocksWeight
-blocksWeight = int(get_args_value("bWeight", 1000))
+blocksWeight = int(get_args_value("w1", 1000))
 #numberOfRoundsWeight
-numberOfRoundsWeight = int(get_args_value("nRWeight", 100))
+numberOfRoundsWeight = int(get_args_value("w2", 100))
 
 # Print all arguments
 print(f'\nTotal {len(sys.argv)} and argument List: {sys.argv}')
@@ -69,14 +69,19 @@ m.SearchEmphasis = 2
 m.max_gap = 0.005
 
 
-def create_decision_var_3(name):
+def create_decision_var_2_rv_integer(name):
+    return {
+        (r, v): m.add_var(f"{name}({r},{v})", var_type=INTEGER)
+        for (r, v) in product(R, V)
+    }
+
+def create_decision_var_3_tiv(name):
     return {
         (t, i, v): m.add_var(f"{name}({t},{i},{v})", var_type=BINARY)
         for (t, i, v) in product(T, R, V)
     }
 
-
-def create_decision_var_4(name):
+def create_decision_var_4_tijv(name):
     return {
         (t, i, j, v): m.add_var(
             f"{name}({t},{i},{j},{v})", var_type=BINARY
@@ -94,16 +99,16 @@ Primary = {
     for (i, v) in product(R, V)
 }
 
-SendPrepReq = create_decision_var_3("SendPrepReq")
-SendPrepRes = create_decision_var_3("SendPrepRes")
-SendCommit = create_decision_var_3("SendCommit")
-SendCV = create_decision_var_3("SendCV")
-BlockRelay = create_decision_var_3("BlockRelay")
+SendPrepReq = create_decision_var_3_tiv("SendPrepReq")
+SendPrepRes = create_decision_var_3_tiv("SendPrepRes")
+SendCommit = create_decision_var_3_tiv("SendCommit")
+SendCV = create_decision_var_3_tiv("SendCV")
+BlockRelay = create_decision_var_3_tiv("BlockRelay")
 
-RecvPrepReq = create_decision_var_4("RecvPrepReq")
-RecvPrepResp = create_decision_var_4("RecvPrepResp")
-RecvCommit = create_decision_var_4("RecvCommit")
-RecvCV = create_decision_var_4("RecvCV")
+RecvPrepReq = create_decision_var_4_tijv("RecvPrepReq")
+RecvPrepResp = create_decision_var_4_tijv("RecvPrepResp")
+RecvCommit = create_decision_var_4_tijv("RecvCommit")
+RecvCV = create_decision_var_4_tijv("RecvCV")
 
 """
 Auxiliary Variables
@@ -113,43 +118,17 @@ totalBlockRelayed = m.add_var("totalBlockRelayed", var_type=INTEGER)
 blockRelayed = {v: m.add_var(f"blockRelayed({v})", var_type=BINARY) for v in V}
 lastRelayedBlock = m.add_var("lastRelayedBlock", var_type=INTEGER)
 numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
-changeViewRecvPerNodeAndView = {
-    (r, v): m.add_var(f"changeViewRecvPerNodeAndView({r},{v})", var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
+changeViewRecvPerNodeAndView = create_decision_var_2_rv_integer("changeViewRecvPerNodeAndView")
+
 '''
-prepReqSendPerNodeAndView = {
-    (r, v): m.add_var("prepReqSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-prepRespSendPerNodeAndView = {
-    (r, v): m.add_var("prepRespSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-commitSendPerNodeAndView = {
-    (r, v): m.add_var("commitSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-changeViewSendPerNodeAndView = {
-    (r, v): m.add_var("changeViewSendPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-prepReqRecvPerNodeAndView = {
-    (r, v): m.add_var("prepReqRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-prepRespRecvPerNodeAndView = {
-    (r, v): m.add_var("prepRespRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-commitRecvPerNodeAndView = {
-    (r, v): m.add_var("commitRecvPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
-blockRelayPerNodeAndView = {
-    (r, v): m.add_var("blockRelayPerNodeAndView(%s,%s)" % (r, v), var_type=INTEGER)
-    for (r, v) in product(R, V)
-}
+prepReqSendPerNodeAndView = create_decision_var_2_rv_integer("prepReqSendPerNodeAndView")
+prepRespSendPerNodeAndView = create_decision_var_2_rv_integer("prepRespSendPerNodeAndView")
+commitSendPerNodeAndView = create_decision_var_2_rv_integer("commitSendPerNodeAndView")
+changeViewSendPerNodeAndView = create_decision_var_2_rv_integer("changeViewSendPerNodeAndView")
+prepReqRecvPerNodeAndView = create_decision_var_2_rv_integer("prepReqRecvPerNodeAndView")
+prepRespRecvPerNodeAndView = create_decision_var_2_rv_integer("prepRespRecvPerNodeAndView")
+commitRecvPerNodeAndView = create_decision_var_2_rv_integer("commitRecvPerNodeAndView")
+blockRelayPerNodeAndView = create_decision_var_2_rv_integer("blockRelayPerNodeAndView")
 '''
 
 """
@@ -263,7 +242,6 @@ for (t, i, v) in product(T - {1}, R, V):
         )
 
 # Sended by another node J will lag, at least, one interval `t`
-
 for t, i, j, v in product(T - {1}, R, R, V):
     if i != j:
         add_var_loop = [
@@ -279,6 +257,14 @@ for t, i, j, v in product(T - {1}, R, R, V):
                 <= xsum(send_var[t2, j, v] for t2 in T if 1 < t2 < t),
                 f"{it_name}({t},{i},{j},{v})",
             )
+
+# Force the node to Received PrepRes along with PrepReq (in dBFT we call all as Preparation)
+for (t, i, j, v) in product(T - {1}, R, R, V):
+    m += (
+        RecvPrepResp[t, i, j, v]
+        >= RecvPrepReq[t, i, j, v],
+        "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
+    )
 
 # Force the node to Received PrepRes & PrepReq along with CV
 # This will help nodes to propose the same block on next view
@@ -297,14 +283,6 @@ for t, i, j, v in product(T - {1}, R, R_OK, V):
             "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
         )
 """
-
-# Force the node to Received PrepRes along with PrepReq
-for (t, i, j, v) in product(T - {1}, R, R, V):
-    m += (
-        RecvPrepResp[t, i, j, v]
-        >= RecvPrepReq[t, i, j, v],
-        "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
-    )
 
 """
 MARK A PAYLOAD AS RECEIVED ONLY ONCE PER VIEW
@@ -524,11 +502,9 @@ if minimization:
 if not minimization:
     m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight)
     print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+# OTHER POSSIBLE OJECTIVES such as counting total number of messages in order to maximize communication and conflicts
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
 # m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
-
-# For Maximization
-# m.objective = maximize(totalBlockRelayed*1000 + numberOfRounds*-1)
 # m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
 
 m.verbose = 1
@@ -536,7 +512,6 @@ m.verbose = 1
 # enter initial solution: list of pairs of (var, value)
 # m.start = [
 #            (Primary[1,5], 1)
-#
 #          ]
 
 print(f'model has {m.num_cols} vars, {m.num_rows} constraints and {m.num_nz} nzs')
