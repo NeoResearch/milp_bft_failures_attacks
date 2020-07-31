@@ -1,5 +1,5 @@
 from itertools import product
-from mip import Model, BINARY, INTEGER, xsum, OptimizationStatus, maximize, minimize
+from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
 from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from datetime import datetime
 import sys
@@ -337,10 +337,10 @@ for (i, j, v) in product(R_OK, R_OK, V):
         add_var_loop = [
             # (RecvPrepReq, SendPrepReq, "prepReqReceivedNonByz"),
             # (RecvPrepResp, SendPrepRes, "prepRespReceivedNonByz"),
-            (RecvCommit, SendCommit, "commitReceivedNonByz"),
+            # (RecvCommit, SendCommit, "commitReceivedNonByz"),
             # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
             # On the other hand, enabling it and commits together, model can only find N rounds as minimum
-            (RecvCV, SendCV, "cvReceivedNonByz"),
+            # (RecvCV, SendCV, "cvReceivedNonByz"),
         ]
         for it in add_var_loop:
             recv_var, send_var, it_name = it
@@ -522,7 +522,17 @@ m.verbose = 1
 #            (Primary[1,5], 1)
 #          ]
 
-print(f'model has {m.num_cols} vars, {m.num_rows} constraints and {m.num_nz} nzs')
+# print(f'model has {m.num_cols} vars, {m.num_rows} constraints and {m.num_nz} nzs')
+nbin = len([v for v in m.vars if v.var_type == BINARY])
+ncon = len([v for v in m.vars if v.var_type == CONTINUOUS])
+nint = len([v for v in m.vars if v.var_type == INTEGER])
+neq = len([c for c in m.constrs if c.expr.sense == EQUAL])
+nineq = len([c for c in m.constrs if c.expr.sense != EQUAL])
+print(
+    f"model has {m.num_cols} vars ({nbin} bin, {ncon} cont and {nint} gen."
+    f"integer), {m.num_rows} constraints ({neq} equalities and {nineq} "
+    f"inequalities) and {m.num_nz} nzs"
+)
 
 m.write('a.lp')
 
