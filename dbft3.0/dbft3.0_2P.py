@@ -478,15 +478,25 @@ for (i, v) in product(R_OK, V):
             f"{it_name}({i},{v})",
         )
 
-# TODO
-
 # We assume that honest nodes will only perform an action if view change was approved - no view jumps
 # - not tested if really needed
-for (i, v) in product(R_OK, V - {1}):
+for (p, i, v) in product(P, R_OK, V - {1}):
     add_var_loop = [
         (SendPrepReq, "sendPrepReqOnlyIfViewBeforeOk"),
         (SendPrepRes, "sendPrepResOnlyIfViewBeforeOk"),
+        (SendPreCommit, "sendPreCommitOnlyIfViewBeforeOk"),        
         (SendCommit, "sendCommitOnlyIfViewBeforeOk"),
+    ]
+    for it in add_var_loop:
+        it_var, it_name = it
+        m += (
+            xsum(it_var[p, t, i, v] for t in T - {1})
+            <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
+            f"{it_name}({p}, {i},{v})",
+        )
+
+for (i, v) in product(R_OK, V - {1}):
+    add_var_loop = [
         (SendCV, "sendCVOnlyIfViewBeforeOk"),
     ]
     for it in add_var_loop:
@@ -495,46 +505,64 @@ for (i, v) in product(R_OK, V - {1}):
             xsum(it_var[t, i, v] for t in T - {1})
             <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
             f"{it_name}({i},{v})",
-        )
+        )        
 
 # Assert Non-byz to SendCV every round, if commit not achieved
 # After first round we need to ensure circular behavior in order to not force if round is not active
 for i in R_OK:
     m += (
         xsum(SendCV[t, i, 1] for t in T - {1})
-        >= 1 - xsum(SendCommit[t, i, 1] for t in T - {1}),
+        >= 1 - xsum(SendCommit[p, t, i, 1] for t in T - {1} for p in P),
         f"assertSendCVIfNotSendCommitV1({i})",
     )
 
+# As Primary 1 will always be on, we can just look to it instead of both fallback and priority one
 for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
-        >= 1 - xsum(SendCommit[t, i, v2] for t in T - {1} for v2 in V if v2 <= v) - (1 - xsum(Primary[ii, v - 1] for ii in R)),
+        >= 1 - xsum(SendCommit[p, t, i, v2] for t in T - {1} for v2 in V if v2 <= v for p in P) - (1 - xsum(Primary[1, ii, v - 1] for ii in R)),
         f"assertSendCVIfNotCommitAndYesPrimary({i},{v})",
     )
 
-for (i, v, t) in product(R_OK, V, T - {1}):
+for (p, i, v, t) in product(P, R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     add_var_loop = [
         (SendPrepReq, SendCV, "noPrepReqIfCV"),
         (SendPrepRes, SendCV, "noPrepResIfCV"),
+        (SendPreCommit, SendCV, "noPreCommitIfCV"),
         (SendCommit, SendCV, "noCommitIfCV"),
         # LINKS Commit and LIMITS - analogous as the constrains for SendCV
-        (SendCV, SendCommit, "noCVIfCommit"),
         # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
         (SendPrepReq, BlockRelay, "noBlockYesPrepReq"),
         (SendPrepRes, BlockRelay, "noBlockYesPrepRes"),
+        (SendPreCommit, BlockRelay, "noBlockYesPreCommit"),
         (SendCommit, BlockRelay, "noBlockYesCommit"),
+    ]
+    for it in add_var_loop:
+        send_var, send_var2, it_name = it
+        m += (
+            send_var[p, t, i, v]
+            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            f"{it_name}({p},{i},{v},{t})",
+        )
+
+for (i, v, t) in product(R_OK, V, T - {1}):
+    # LINKS CV AND PrepReq,PrepRes and Commit
+    add_var_loop = [
+        # LINKS Commit and LIMITS - analogous as the constrains for SendCV
+        (SendCV, SendCommit, "noCVIfCommit"),
+        # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
         (SendCV, BlockRelay, "noBlockYesCV"),
     ]
     for it in add_var_loop:
         send_var, send_var2, it_name = it
         m += (
             send_var[t, i, v]
-            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            <= 1 - xsum(send_var2[p, t2, i, v] for t2 in T if 1 < t2 <= t for p in P),
             f"{it_name}({i},{v},{t})",
         )
 
+# TODO
 for (i, v) in product(R_OK, V - {1}):
     # LINKS BlockRelayed and LIMITS in past views
     m += (
