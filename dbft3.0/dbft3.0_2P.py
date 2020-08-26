@@ -230,12 +230,12 @@ for (t, i, v) in product(T - {1}, R, V):
     m += (
         SendCommit[1, t, i, v]
         <= (1 / M) * xsum(RecvPreCommit[1,t2, i, j, v] for t2 in T if t2 <= t for j in R) + SPEEDUP * (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        f"commitSentIfMPreCommits1WithSpeedUp({p},{t},{i},{v})",
+        f"commitSentIfMPreCommits1WithSpeedUp({t},{i},{v})",
     )
     m += (
         SendCommit[2, t, i, v]
         <= (1 / M) * xsum(RecvPreCommit[2,t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        f"commitSentIfMPreCommits2({p},{t},{i},{v})",
+        f"commitSentIfMPreCommits2({t},{i},{v})",
     )      
 
 """
@@ -258,7 +258,7 @@ for (p, i, v) in product(P, R, V):
         it_var, it_name = it
         m += (
             xsum(it_var[p, t, i, v] for t in T - {1}) <= 1,
-            f"{it_name}({p}, {i},{v})",
+            f"{it_name}({p},{i},{v})",
         )
 
 for (i, v) in product(R, V):
@@ -333,44 +333,35 @@ for t, i, j, v in product(T - {1}, R, R, V):
                 <= xsum(send_var[t2, j, v] for t2 in T if 1 < t2 < t),
                 f"{it_name}({t},{i},{j},{v})",
             )            
-
-# COME BACK FROM HERE TODO
  
 # Force the node to Received PrepRes along with PrepReq (in dBFT we call all as Preparation)
-for (t, i, j, v) in product(T - {1}, R, R, V):
+for (p, t, i, j, v) in product(P, T - {1}, R, R, V):
     m += (
-        RecvPrepResp[t, i, j, v]
-        >= RecvPrepReq[t, i, j, v],
-        "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s)" % (t, i, j, v),
+        RecvPrepResp[p, t, i, j, v]
+        >= RecvPrepReq[p, t, i, j, v],
+        "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s,%s)" % (p, t, i, j, v),
     )
-
-# Force the node to Received PrepRes & PrepReq along with CV
-# This will help nodes to propose the same block on next view
-# This is currently not active on NEO dBFT 2.0
-"""
-for t, i, j, v in product(T - {1}, R, R_OK, V):        
-        # Or you received PrepRes before or together with RecvCV
-        m += (
-            xsum(RecvPrepResp[t2, i, j, v] for t2 in T if 1 < t2 <= t)
-            >= xsum(SendPrepRes[t2, j, v] for t2 in T if 1 < t2 < t) - (1-RecvCV[t, i, j, v])*(sum(1 for t2 in T if 1 < t2 < t)) ,
-            "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
-        )
-        m += (
-            xsum(RecvPrepReq[t2, i, j, v] for t2 in T if 1 < t2 <= t)
-            >= xsum(SendPrepReq[t2, j, v] for t2 in T if 1 < t2 < t) - (1-RecvCV[t, i, j, v])*(sum(1 for t2 in T if 1 < t2 < t)) ,
-            "forcePrepResInformationonCVIfSendedByJ(%s,%s,%s,%s)" % (t, i, j, v),
-        )
-"""
 
 """
 MARK A PAYLOAD AS RECEIVED ONLY ONCE PER VIEW
 =======================
 """
-for (i, j, v) in product(R, R, V):
+for (p, i, j, v) in product(P, R, R, V):
     add_var_loop = [
         (RecvPrepReq, "rcvdPrepReqOO"),
         (RecvPrepResp, "rcvdPrepResOO"),
+        (RecvPreCommit, "rcvdPreCommitOO"),
         (RecvCommit, "rcvdCommitOO"),
+    ]
+    for it in add_var_loop:
+        it_var, it_name = it
+        m += (
+            xsum(it_var[p, t, i, j, v] for t in T - {1}) <= 1,
+            f"{it_name}({p},{i},{j},{v})",
+        )
+
+for (i, j, v) in product(R, R, V):
+    add_var_loop = [
         (RecvCV, "rcvdCVOO"),
     ]
     for it in add_var_loop:
@@ -378,7 +369,7 @@ for (i, j, v) in product(R, R, V):
         m += (
             xsum(it_var[t, i, j, v] for t in T - {1}) <= 1,
             f"{it_name}({i},{j},{v})",
-        )
+        )        
 
 """
 AUXILIARY BLOCK RELAYED
@@ -387,12 +378,12 @@ AUXILIARY BLOCK RELAYED
 for (v) in V:
     m += (
         blockRelayed[v]
-        <= xsum(BlockRelay[t, i, v] for t in T - {1} for i in R),
+        <= xsum(BlockRelay[p, t, i, v] for t in T - {1} for i in R for p in P),
         f"blockRelayedOnlyIfNodeRelay({v})",
     )
     m += (
         blockRelayed[v] * N
-        >= xsum(BlockRelay[t, i, v] for t in T - {1} for i in R),
+        >= xsum(BlockRelay[p, t, i, v] for t in T - {1} for i in R for p in P),
         f"blockRelayedCounterForced({v})",
     )
 
@@ -406,12 +397,24 @@ Honest Node Constraints
 # Which is not completelly correct.
 # Note that, if all are enabled together they force 1 block as minimum
 # consequently, addding a constraint `totalBlockRelayed = 0` makes MILP infeasible or unbounded
-for (i, j, v) in product(R_OK, R_OK, V):
+for (p, i, j, v) in product(P, R_OK, R_OK, V):
     if i != j:
         add_var_loop = [
             #(RecvPrepReq, SendPrepReq, "prepReqReceivedNonByz"),
             #(RecvPrepResp, SendPrepRes, "prepRespReceivedNonByz"),
-            (RecvCommit, SendCommit, "commitReceivedNonByz"),
+            #(RecvCommit, SendCommit, "preCommitReceivedNonByz"),
+            #(RecvCommit, SendCommit, "commitReceivedNonByz"),
+        ]
+        for it in add_var_loop:
+            recv_var, send_var, it_name = it
+            m += (
+                xsum(recv_var[p, t, i, j, v] for t in T - {1})
+                >= xsum(send_var[p, t, j, v] for t in T - {1}),
+                f"{it_name}({p},{i},{j},{v})",
+            )
+for (i, j, v) in product(R_OK, R_OK, V):
+    if i != j:
+        add_var_loop = [
             # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
             # On the other hand, enabling it and commits together, model can only find N rounds as minimum
             #(RecvCV, SendCV, "cvReceivedNonByz"),
@@ -424,40 +427,58 @@ for (i, j, v) in product(R_OK, R_OK, V):
                 f"{it_name}({i},{j},{v})",
             )
 
+
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
 for i in R_OK:
     m += (
-        xsum(BlockRelay[t, i, v] for t in T - {1} for v in V) <= 1,
+        xsum(BlockRelay[p, t, i, v] for t in T - {1} for v in V for p in P) <= 1,
         "blockRelayLimitToOneForNonByz(%s)" % (i),
     )
 
 # Force a Primary to exist if any honest knows change views - 2 acts as BIGNUM
 for (i, v) in product(R_OK, V - {1}):
     m += (
-        xsum(2 * Primary[ii, v] for ii in R)
+        xsum(2 * Primary[1, ii, v] for ii in R)
         >= changeViewRecvPerNodeAndView[i, v - 1] - M + 1,
         "assertAtLeastOnePrimaryIfEnoughCV(%s,%s)" % (i, v),
     )
 
 # We assume that honest nodes will perform an action within the simulation limits
-for (i, v) in product(R_OK, V):
+for (p, i, v) in product(P, R_OK, V):
     m += (
-        xsum(SendPrepReq[t, i, v] for t in T - {1})
-        >= Primary[i, v],
+        xsum(SendPrepReq[p, t, i, v] for t in T - {1})
+        >= Primary[p, i, v],
         "assertSendPrepReqWithinSimLimit(%s,%s)" % (i, v),
     )
     add_var_loop = [
         (SendPrepRes, RecvPrepReq, 1, 0, "assertSendPrepResWithinSimLimit"),
-        (SendCommit, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit"),
         (BlockRelay, RecvCommit, 2, - M + 1, "assertBlockRelayWithinSimLimit"),
     ]
     for it in add_var_loop:
         send_var, recv_var, rate, delta, it_name = it
         m += (
-            xsum(rate * send_var[t, i, v] for t in T - {1})
-            >= xsum(recv_var[t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
+            xsum(rate * send_var[p, t, i, v] for t in T - {1})
+            >= xsum(recv_var[p, t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
+            f"{it_name}({p},{i},{v})",
+        )
+
+for (i, v) in product(R_OK, V):
+    add_var_loop = [
+        (SendPreCommit, 1, RecvPrepResp, 2, - f + 1, "assertSendCommitWithinSimLimit1"),
+        (SendPreCommit, 2, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
+        (SendCommit, 1, SendPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit1"),
+        (SendCommit, 1, RecvPrepResp, 2, - M + 1, "assertSendCommitFastFast1"),
+        (SendCommit, 2, SendPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
+    ]
+    for it in add_var_loop:
+        send_var, p_loop, recv_var, rate, delta, it_name = it
+        m += (
+            xsum(rate * send_var[p_loop,t, i, v] for t in T - {1})
+            >= xsum(recv_var[p_loop, t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
             f"{it_name}({i},{v})",
         )
+
+# TODO
 
 # We assume that honest nodes will only perform an action if view change was approved - no view jumps
 # - not tested if really needed
