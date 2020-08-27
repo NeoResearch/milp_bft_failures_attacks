@@ -531,6 +531,18 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
         (SendPrepRes, SendCV, "noPrepResIfCV"),
         (SendPreCommit, SendCV, "noPreCommitIfCV"),
         (SendCommit, SendCV, "noCommitIfCV"),
+    ]
+    for it in add_var_loop:
+        send_var, send_var2, it_name = it
+        m += (
+            send_var[p, t, i, v]
+            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            f"{it_name}({p},{i},{v},{t})",
+        )
+
+for (p, i, v, t) in product(P, R_OK, V, T - {1}):
+    # LINKS CV AND PrepReq,PrepRes and Commit
+    add_var_loop = [
         # LINKS Commit and LIMITS - analogous as the constrains for SendCV
         # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
         (SendPrepReq, BlockRelay, "noBlockYesPrepReq"),
@@ -542,7 +554,7 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
         send_var, send_var2, it_name = it
         m += (
             send_var[p, t, i, v]
-            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            <= 1 - xsum(send_var2[p2, t2, i, v] for t2 in T if 1 < t2 <= t for p2 in P),
             f"{it_name}({p},{i},{v},{t})",
         )
 
@@ -563,11 +575,11 @@ for (i, v, t) in product(R_OK, V, T - {1}):
         )
 
 # TODO
-for (i, v) in product(R_OK, V - {1}):
+for (p, i, v) in product(P, R_OK, V - {1}):
     # LINKS BlockRelayed and LIMITS in past views
     m += (
-        Primary[i, v]
-        <= 1 - xsum(BlockRelay[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
+        Primary[p, i, v]
+        <= 1 - xsum(BlockRelay[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
         "noBlockOldViewsYesPrimary(%s,%s)" % (i, v),
     )
     add_var_loop = [
@@ -578,15 +590,26 @@ for (i, v) in product(R_OK, V - {1}):
         (SendPrepReq, SendCommit, "noCommitOldViewsYesPrepReq"),
         (SendPrepRes, SendCommit, "noCommitOldViewsYesPrepRes"),
         (SendCommit, SendCommit, "noCommitOldViewsYesCommit"),
+    ]
+    for it in add_var_loop:
+        send_var, relay_var, it_name = it
+        m += (
+            xsum(send_var[p, t, i, v] for t in T - {1})
+            <= 1 - xsum(relay_var[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
+            f"{it_name}({i},{v})",
+        )
+
+for (i, v) in product(R_OK, V - {1}):
+    add_var_loop = [
         (SendCV, SendCommit, "noCommitOldViewsYesCV"),
     ]
     for it in add_var_loop:
         send_var, relay_var, it_name = it
         m += (
             xsum(send_var[t, i, v] for t in T - {1})
-            <= 1 - xsum(relay_var[t, i, v2] for t in T - {1} for v2 in V if v2 < v),
+            <= 1 - xsum(relay_var[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
             f"{it_name}({i},{v})",
-        )
+        )        
 
 """
 CALCULATION OF AUXILIARY VARIABLES
@@ -599,7 +622,7 @@ m += (
 )
 
 m += (
-    numberOfRounds == xsum(Primary[i, v] for (i, v) in product(R, V)),
+    numberOfRounds == xsum(Primary[1, i, v] for (i, v) in product(R, V)),
     "calcTotalPrimaries",
 )
 
@@ -610,10 +633,11 @@ for (i, v) in product(R, V):
         "calcChangeViewEveryNodeAndView(%s,%s)" % (i, v),
     )
 
+# TODO This metric will not be working perfect this one because it is only looking to block relayed by Priority
 for (t, i, v) in product(T, R, V):
     m += (
         lastRelayedBlock
-        >= ((v - 1) * tMax * BlockRelay[t, i, v] + BlockRelay[t, i, v] * t),
+        >= ((v - 1) * tMax * BlockRelay[1, t, i, v] + BlockRelay[1, t, i, v] * t),
         "calcLastRelayedBlockMaxProblem(%s,%s,%s)" % (t, i, v),
     )
 
@@ -622,14 +646,13 @@ OBJ FUNCTION
 =======================
 """
 if msgsWeight != 0:
-    m += totalNumberSendMsg == xsum(SendPrepReq[t, i, v] + SendPrepRes[t, i, v] + SendCommit[t, i, v] + SendCV[t, i, v]for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
-    m += totalNumberRcvdMsg == xsum(RecvPrepReq[t, i, j, v] + RecvPrepResp[t, i, j, v] + RecvCommit[t, i, j, v] + RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
+    m += totalNumberSendMsg == xsum(SendPrepReq[p, t, i, v] + SendPrepRes[p, t, i, v] + SendCommit[p, t, i, v] for (p, t, i, v) in product(P, T, R, V)) + xsum(SendCV[t, i, v]for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
+    m += totalNumberRcvdMsg == xsum(RecvPrepReq[p, t, i, j, v] + RecvPrepResp[p, t, i, j, v] + RecvCommit[p, t, i, j, v] for (p, t, i, j, v) in product(P, T, R, R, V)) + xsum(RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
     m += totalNumberMsgs == totalNumberSendMsg + totalNumberRcvdMsg, "calcTotalNumberOfMsgs"
 
 # For Minimization - Default
 if minimization:
-    #m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
-    m.objective = minimize(totalBlockRelayed*101 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)))
+    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
     print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 if not minimization:
     m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
@@ -638,6 +661,7 @@ if not minimization:
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
 # m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
 # m.objective = maximize(totalBlockRelayed*1000 + lastRelayedBlock*-1)
+# m.objective = minimize(totalBlockRelayed*101 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)))
 
 m.verbose = 1
 
