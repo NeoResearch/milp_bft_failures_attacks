@@ -66,7 +66,7 @@ R = set(range(1, N + 1))
 R_OK = set(range(1, M + 1))
 V = set(range(1, N + 1))
 T = set(range(1, tMax + 1))
-P = set(range(1, 2))
+P = set(range(1, 2 + 1))
 
 m = Model()
 
@@ -180,7 +180,7 @@ for (p, i) in product(P,R):
     m += xsum(Primary[p, i, v] for v in V) <= 1, f"primaryOO({p},{i})"
 
 # If backup can not help on the first view the consensus should follow its normal flow 
-m += xsum(Primary[2, i, 1] for i in R) <= 1, "primary2OnlyFirstView"
+m += xsum(Primary[2, i, 1] for i in R) == 1, "primary2OnlyFirstView"
 m += xsum(Primary[2, i, v] for i in R for v in V if v > 1) == 0, "primary20ForOtherViews"
 
 # Ensure circular behavior, if previous Primary not found and conclusions not done we can not move on.
@@ -304,7 +304,7 @@ for (t, i, v) in product(T - {1}, R, V):
         )
 
 # Sended by another node J will lag, at least, one interval `t`
-for t, i, j, v in product(T - {1}, R, R, V):
+for p, t, i, j, v in product(P, T - {1}, R, R, V):
     if i != j:
         add_var_loop = [
             (RecvPrepReq, SendPrepReq, "prepReqReceived"),
@@ -315,9 +315,9 @@ for t, i, j, v in product(T - {1}, R, R, V):
         for it in add_var_loop:
             recv_var, send_var, it_name = it
             m += (
-                recv_var[t, i, j, v]
-                <= xsum(send_var[t2, j, v] for t2 in T if 1 < t2 < t),
-                f"{it_name}({t},{i},{j},{v})",
+                recv_var[p, t, i, j, v]
+                <= xsum(send_var[p, t2, j, v] for t2 in T if 1 < t2 < t),
+                f"{it_name}({p},{t},{i},{j},{v})",
             )
 
 #  The same as above for CV
@@ -466,14 +466,14 @@ for (i, v) in product(R_OK, V):
     add_var_loop = [
         (SendPreCommit, 1, RecvPrepResp, 2, - f + 1, "assertSendCommitWithinSimLimit1"),
         (SendPreCommit, 2, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
-        (SendCommit, 1, SendPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit1"),
+        (SendCommit, 1, RecvPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit1"),
         (SendCommit, 1, RecvPrepResp, 2, - M + 1, "assertSendCommitFastFast1"),
-        (SendCommit, 2, SendPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
+        (SendCommit, 2, RecvPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
     ]
     for it in add_var_loop:
         send_var, p_loop, recv_var, rate, delta, it_name = it
         m += (
-            xsum(rate * send_var[p_loop,t, i, v] for t in T - {1})
+            xsum(rate * send_var[p_loop, t, i, v] for t in T - {1})
             >= xsum(recv_var[p_loop, t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
             f"{it_name}({i},{v})",
         )
