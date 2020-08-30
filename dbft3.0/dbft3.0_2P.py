@@ -411,7 +411,7 @@ for (p, i, j, v) in product(P, R_OK, R_OK, V):
         add_var_loop = [
             #(RecvPrepReq, SendPrepReq, "prepReqReceivedNonByz"),
             #(RecvPrepResp, SendPrepRes, "prepRespReceivedNonByz"),
-            #(RecvCommit, SendCommit, "preCommitReceivedNonByz"),
+            #(RecvPreCommit, SendPreCommit, "preCommitReceivedNonByz"),
             #(RecvCommit, SendCommit, "commitReceivedNonByz"),
         ]
         for it in add_var_loop:
@@ -426,7 +426,7 @@ for (i, j, v) in product(R_OK, R_OK, V):
         add_var_loop = [
             # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
             # On the other hand, enabling it and commits together, model can only find N rounds as minimum
-            #(RecvCV, SendCV, "cvReceivedNonByz"),
+            (RecvCV, SendCV, "cvReceivedNonByz"),
         ]
         for it in add_var_loop:
             recv_var, send_var, it_name = it
@@ -723,8 +723,8 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
                 sol_out.write(f'{v.name} : {v.x}\n')
 
     for p in P:
-        sol_out.write('\n\n========= DETAILED SOLUTION {p}=========\n\n')
-        for v in V:
+        sol_out.write(f'\n\n========= DETAILED SOLUTION {p} =========\n\n')
+        for v in V:            
             tTotal = (v - 1) * tMax
             sol_out.write(f'VIEW {v}\n')
             for i in R:
@@ -769,14 +769,14 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
                                 sol_out.write(
                                     f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
 
-                    if is_selected(BlockRelay[t, i, v]):
+                    if is_selected(BlockRelay[p, t, i, v]):
                         sol_out.write(
-                            f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}\n')
+                            f'\t\t\t{p}-{i} BlockRelay in {t}/{t + tTotal} at {v}\n')
                 sol_out.write(
-                    f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
+                    f'\t\t\t{p}-{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
                     f'Commit={countRecvCommit} CV={countRecvCV}\n'
                 )
-        sol_out.write('========= DETAILED SOLUTION {p}=========\n\n\n')
+        sol_out.write(f'========= DETAILED SOLUTION {p}=========\n\n\n')
 
     if status == OptimizationStatus.OPTIMAL:
         sol_out.write(f'optimal solution cost {m.objective_value} found\n')
@@ -791,6 +791,7 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
         sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}\n')
     sol_out.write("\n")
 
+quit()
 
 with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     execution_draw = ExecutionDraw(
