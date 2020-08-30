@@ -27,16 +27,16 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 # python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100
 # MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds
 # python3 dbft2.0_Byz_Liveness.py --maximization --w1=1000 --w2=-100
-# MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds   
+# MAXIMIZE WITH 1000 as weight for blocks and -100 for number of rounds
 
 
 minimization = bool(get_args_value("minimization", True, True))
 maximization = bool(get_args_value("maximization", False, True))
 if maximization:
-    minimization = False    
-#blocksWeight
+    minimization = False
+# blocksWeight
 blocksWeight = int(get_args_value("w1", 1000))
-#numberOfRoundsWeight
+# numberOfRoundsWeight
 numberOfRoundsWeight = int(get_args_value("w2", 100))
 msgsWeight = int(get_args_value("w3", 0))
 
@@ -58,7 +58,8 @@ tMax = int(get_args_value("tMax", 8))
 SPEEDUP = int(get_args_value("speedup", 0))
 
 
-print(f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
+print(
+    f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
 
 # custom data can be loaded here
 
@@ -80,17 +81,20 @@ def create_decision_var_2_rv_integer(name):
         for (r, v) in product(R, V)
     }
 
+
 def create_decision_var_3_tiv(name):
     return {
         (t, i, v): m.add_var(f"{name}({t},{i},{v})", var_type=BINARY)
         for (t, i, v) in product(T, R, V)
     }
 
+
 def create_decision_var_4_ptiv(name):
     return {
         (p, t, i, v): m.add_var(f"{name}({p},{t},{i},{v})", var_type=BINARY)
         for (p, t, i, v) in product(P, T, R, V)
     }
+
 
 def create_decision_var_4_tijv(name):
     return {
@@ -100,6 +104,7 @@ def create_decision_var_4_tijv(name):
         for (t, i, j, v) in product(T, R, R, V)
     }
 
+
 def create_decision_var_5_ptijv(name):
     return {
         (p, t, i, j, v): m.add_var(
@@ -107,6 +112,7 @@ def create_decision_var_5_ptijv(name):
         )
         for (p, t, i, j, v) in product(P, T, R, R, V)
     }
+
 
 """
 Decision variables
@@ -141,7 +147,8 @@ numberOfRounds = m.add_var("numberOfRounds", var_type=INTEGER)
 totalNumberSendMsg = m.add_var("totalNumberSendMsg", var_type=INTEGER)
 totalNumberRcvdMsg = m.add_var("totalNumberRcvdMsg", var_type=INTEGER)
 totalNumberMsgs = m.add_var("totalNumberMsgs", var_type=INTEGER)
-changeViewRecvPerNodeAndView = create_decision_var_2_rv_integer("changeViewRecvPerNodeAndView")
+changeViewRecvPerNodeAndView = create_decision_var_2_rv_integer(
+    "changeViewRecvPerNodeAndView")
 
 """
 Time zero constraints
@@ -150,7 +157,7 @@ Time zero constraints
 for (p, i, v) in product(P, R, V):
     m += SendPrepReq[p, 1, i, v] == 0, f"initSendPrepReq({p},{i},{v})"
     m += SendPrepRes[p, 1, i, v] == 0, f"initSendPrepRes({p},{i},{v})"
-    m += SendPreCommit[p, 1, i, v] == 0, f"initSendPreCommit({p},{i},{v})"    
+    m += SendPreCommit[p, 1, i, v] == 0, f"initSendPreCommit({p},{i},{v})"
     m += SendCommit[p, 1, i, v] == 0, f"initSendCommit({p},{i},{v})"
     m += BlockRelay[p, 1, i, v] == 0, f"initBlockRelay({p},{i},{v})"
 
@@ -160,7 +167,8 @@ for (i, v) in product(R, V):
 for (p, i, j, v) in product(P, R, R, V):
     m += RecvPrepReq[p, 1, i, j, v] == 0, f"initRecvPrepReq({p},{i},{j},{v})"
     m += RecvPrepResp[p, 1, i, j, v] == 0, f"initRecvPrepRes({p},{i},{j},{v})"
-    m += RecvPreCommit[p, 1, i, j, v] == 0, f"initRecvPreCommit({p},{i},{j},{v})"    
+    m += RecvPreCommit[p, 1, i, j,
+                       v] == 0, f"initRecvPreCommit({p},{i},{j},{v})"
     m += RecvCommit[p, 1, i, j, v] == 0, f"initRecvCommit({p},{i},{j},{v})"
 
 for (i, j, v) in product(R, R, V):
@@ -176,12 +184,13 @@ m += xsum(Primary[1, i, 1] for i in R) == 1, "consensusShouldStart"
 for v in V:
     m += xsum(Primary[1, i, v] for i in R) <= 1, f"singlePrimaryEveryView({v})"
 
-for (p, i) in product(P,R):
+for (p, i) in product(P, R):
     m += xsum(Primary[p, i, v] for v in V) <= 1, f"primaryOO({p},{i})"
 
-# If backup can not help on the first view the consensus should follow its normal flow 
+# If backup can not help on the first view the consensus should follow its normal flow
 m += xsum(Primary[2, i, 1] for i in R) == 1, "primary2OnlyFirstView"
-m += xsum(Primary[2, i, v] for i in R for v in V if v > 1) == 0, "primary20ForOtherViews"
+m += xsum(Primary[2, i, v]
+          for i in R for v in V if v > 1) == 0, "primary20ForOtherViews"
 
 # Ensure circular behavior, if previous Primary not found and conclusions not done we can not move on.
 # Primary should had fault, at least*/
@@ -229,14 +238,14 @@ for (t, i, v) in product(T - {1}, R, V):
     )
     m += (
         SendCommit[1, t, i, v]
-        <= (1 / M) * xsum(RecvPreCommit[1,t2, i, j, v] for t2 in T if t2 <= t for j in R) + SPEEDUP * (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
+        <= (1 / M) * xsum(RecvPreCommit[1, t2, i, j, v] for t2 in T if t2 <= t for j in R) + SPEEDUP * (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
         f"commitSentIfMPreCommits1WithSpeedUp({t},{i},{v})",
     )
     m += (
         SendCommit[2, t, i, v]
-        <= (1 / M) * xsum(RecvPreCommit[2,t2, i, j, v] for t2 in T if t2 <= t for j in R),
+        <= (1 / M) * xsum(RecvPreCommit[2, t2, i, j, v] for t2 in T if t2 <= t for j in R),
         f"commitSentIfMPreCommits2({t},{i},{v})",
-    )      
+    )
 
 """
 SEND PAYLOAD ONLY ONCE (PrepReq,PrepRes,Commit,CV,Block)
@@ -281,7 +290,7 @@ for (p, t, i, v) in product(P, T - {1}, R, V):
     add_var_loop = [
         (RecvPrepReq, SendPrepReq, "prepReqReceivedSS"),
         (RecvPrepResp, SendPrepRes, "prepRespReceivedSS"),
-        (RecvPreCommit, SendPreCommit, "preCommitReceivedSS"),        
+        (RecvPreCommit, SendPreCommit, "preCommitReceivedSS"),
         (RecvCommit, SendCommit, "commitReceivedSS"),
     ]
     for it in add_var_loop:
@@ -309,7 +318,7 @@ for p, t, i, j, v in product(P, T - {1}, R, R, V):
         add_var_loop = [
             (RecvPrepReq, SendPrepReq, "prepReqReceived"),
             (RecvPrepResp, SendPrepRes, "prepRespReceived"),
-            (RecvPreCommit, SendPreCommit, "preCommitReceived"),            
+            (RecvPreCommit, SendPreCommit, "preCommitReceived"),
             (RecvCommit, SendCommit, "commitReceived"),
         ]
         for it in add_var_loop:
@@ -332,8 +341,8 @@ for t, i, j, v in product(T - {1}, R, R, V):
                 recv_var[t, i, j, v]
                 <= xsum(send_var[t2, j, v] for t2 in T if 1 < t2 < t),
                 f"{it_name}({t},{i},{j},{v})",
-            )            
- 
+            )
+
 # Force the node to Received PrepRes along with PrepReq (in dBFT we call all as Preparation)
 for (p, t, i, j, v) in product(P, T - {1}, R, R, V):
     m += (
@@ -369,7 +378,7 @@ for (i, j, v) in product(R, R, V):
         m += (
             xsum(it_var[t, i, j, v] for t in T - {1}) <= 1,
             f"{it_name}({i},{j},{v})",
-        )        
+        )
 
 """
 AUXILIARY BLOCK RELAYED
@@ -431,7 +440,8 @@ for (i, j, v) in product(R_OK, R_OK, V):
 # Non-byz will not relay more than a single block. Byz can Relay (HOLD) and never arrive
 for i in R_OK:
     m += (
-        xsum(BlockRelay[p, t, i, v] for t in T - {1} for v in V for p in P) <= 1,
+        xsum(BlockRelay[p, t, i, v]
+             for t in T - {1} for v in V for p in P) <= 1,
         "blockRelayLimitToOneForNonByz(%s)" % (i),
     )
 
@@ -464,11 +474,15 @@ for (p, i, v) in product(P, R_OK, V):
 
 for (i, v) in product(R_OK, V):
     add_var_loop = [
-        (SendPreCommit, 1, RecvPrepResp, 2, - f + 1, "assertSendCommitWithinSimLimit1"),
-        (SendPreCommit, 2, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
-        (SendCommit, 1, RecvPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit1"),
+        (SendPreCommit, 1, RecvPrepResp, 2, -
+         f + 1, "assertSendCommitWithinSimLimit1"),
+        (SendPreCommit, 2, RecvPrepResp, 2, - M +
+         1, "assertSendCommitWithinSimLimit2"),
+        (SendCommit, 1, RecvPreCommit, 2, - M +
+         1, "assertSendCommitWithinSimLimit1"),
         (SendCommit, 1, RecvPrepResp, 2, - M + 1, "assertSendCommitFastFast1"),
-        (SendCommit, 2, RecvPreCommit, 2, - M + 1, "assertSendCommitWithinSimLimit2"),
+        (SendCommit, 2, RecvPreCommit, 2, - M +
+         1, "assertSendCommitWithinSimLimit2"),
     ]
     for it in add_var_loop:
         send_var, p_loop, recv_var, rate, delta, it_name = it
@@ -484,7 +498,7 @@ for (p, i, v) in product(P, R_OK, V - {1}):
     add_var_loop = [
         (SendPrepReq, "sendPrepReqOnlyIfViewBeforeOk"),
         (SendPrepRes, "sendPrepResOnlyIfViewBeforeOk"),
-        (SendPreCommit, "sendPreCommitOnlyIfViewBeforeOk"),        
+        (SendPreCommit, "sendPreCommitOnlyIfViewBeforeOk"),
         (SendCommit, "sendCommitOnlyIfViewBeforeOk"),
     ]
     for it in add_var_loop:
@@ -505,7 +519,7 @@ for (i, v) in product(R_OK, V - {1}):
             xsum(it_var[t, i, v] for t in T - {1})
             <= (1 / M) * changeViewRecvPerNodeAndView[i, v - 1],
             f"{it_name}({i},{v})",
-        )        
+        )
 
 # Assert Non-byz to SendCV every round, if commit not achieved
 # After first round we need to ensure circular behavior in order to not force if round is not active
@@ -609,7 +623,7 @@ for (i, v) in product(R_OK, V - {1}):
             xsum(send_var[t, i, v] for t in T - {1})
             <= 1 - xsum(relay_var[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
             f"{it_name}({i},{v})",
-        )        
+        )
 
 """
 CALCULATION OF AUXILIARY VARIABLES
@@ -646,17 +660,24 @@ OBJ FUNCTION
 =======================
 """
 if msgsWeight != 0:
-    m += totalNumberSendMsg == xsum(SendPrepReq[p, t, i, v] + SendPrepRes[p, t, i, v] + SendCommit[p, t, i, v] for (p, t, i, v) in product(P, T, R, V)) + xsum(SendCV[t, i, v]for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
-    m += totalNumberRcvdMsg == xsum(RecvPrepReq[p, t, i, j, v] + RecvPrepResp[p, t, i, j, v] + RecvCommit[p, t, i, j, v] for (p, t, i, j, v) in product(P, T, R, R, V)) + xsum(RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
-    m += totalNumberMsgs == totalNumberSendMsg + totalNumberRcvdMsg, "calcTotalNumberOfMsgs"
+    m += totalNumberSendMsg == xsum(SendPrepReq[p, t, i, v] + SendPrepRes[p, t, i, v] + SendCommit[p, t, i, v] for (
+        p, t, i, v) in product(P, T, R, V)) + xsum(SendCV[t, i, v]for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
+    m += totalNumberRcvdMsg == xsum(RecvPrepReq[p, t, i, j, v] + RecvPrepResp[p, t, i, j, v] + RecvCommit[p, t, i, j, v] for (
+        p, t, i, j, v) in product(P, T, R, R, V)) + xsum(RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
+    m += totalNumberMsgs == totalNumberSendMsg + \
+        totalNumberRcvdMsg, "calcTotalNumberOfMsgs"
 
 # For Minimization - Default
 if minimization:
-    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
-    print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+    m.objective = minimize(totalBlockRelayed * blocksWeight + numberOfRounds *
+                           numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
+    print(
+        f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 if not minimization:
-    m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
-    print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+    m.objective = maximize(totalBlockRelayed * blocksWeight + numberOfRounds *
+                           numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
+    print(
+        f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # OTHER POSSIBLE OJECTIVES such as counting total number of messages in order to maximize communication and conflicts
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
 # m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
@@ -683,7 +704,7 @@ print(
 )
 
 # Quit was used to just print the model
-#quit()
+# quit()
 
 status = m.optimize(max_seconds=600)
 
@@ -693,7 +714,7 @@ drawing_file_name = \
     f"_Min_{minimization}_w1_{blocksWeight}_w2_{numberOfRoundsWeight}_w3_{msgsWeight}" \
     f"_{datetime.today().strftime('%Y-%m-%d-%H:%M:%S')}"
 
-m.write(f'{drawing_file_name}.lp') 
+m.write(f'{drawing_file_name}.lp')
 with open(f"{drawing_file_name}.out", 'w') as sol_out:
     if status == OptimizationStatus.OPTIMAL or status == OptimizationStatus.FEASIBLE:
         sol_out.write('solution:\n')
@@ -701,47 +722,70 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
             if abs(v.x) > 1e-6:  # only printing non-zeros
                 sol_out.write(f'{v.name} : {v.x}\n')
 
-    sol_out.write('\n\n========= DETAILED SOLUTION =========\n\n')
-    for v in V:
-        tTotal = (v - 1) * tMax
-        sol_out.write(f'VIEW {v}\n')
-        for i in R:
-            sol_out.write(f'\tValidator {i}\n')
-            if is_selected(Primary[i, v]):
-                sol_out.write('\t\tPRIMARY\n')
-            else:
-                sol_out.write('\t\tBACKUP\n')
-            countRecvPrepReq = countRecvPrepRes = countRecvCommit = countRecvCV = 0
-            for t in T:
-                print_loop = [
-                    ("SendPrepReq", SendPrepReq, "RecvPrepReq", RecvPrepReq, countRecvPrepReq),
-                    ("SendPrepRes", SendPrepRes, "RecvPrepResp", RecvPrepResp, countRecvPrepRes),
-                    ("SendCommit", SendCommit, "RecvCommit", RecvCommit, countRecvCommit),
-                    ("SendCV", SendCV, "RecvCV", RecvCV, countRecvCV),
-                ]
-                for it in print_loop:
-                    send_name, send_var, recv_name, recv_var, counter = it
-                    if is_selected(send_var[t, i, v]):
-                        sol_out.write(f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}\n')
-                    for j in R:
-                        if is_selected(recv_var[t, i, j, v]):
-                            counter += 1
-                            sol_out.write(f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
+    for p in P:
+        sol_out.write('\n\n========= DETAILED SOLUTION {p}=========\n\n')
+        for v in V:
+            tTotal = (v - 1) * tMax
+            sol_out.write(f'VIEW {v}\n')
+            for i in R:
+                sol_out.write(f'\tValidator {i}\n')
+                if is_selected(Primary[p, i, v]):
+                    sol_out.write('\t\tPRIMARY\n')
+                else:
+                    sol_out.write('\t\tBACKUP\n')
+                countRecvPrepReq = countRecvPrepRes = countRecvPreCommit = countRecvCommit = countRecvCV = 0
+                for t in T:
+                    print_loop = [
+                        ("SendPrepReq", SendPrepReq, "RecvPrepReq",
+                        RecvPrepReq, countRecvPrepReq),
+                        ("SendPrepRes", SendPrepRes, "RecvPrepResp",
+                        RecvPrepResp, countRecvPrepRes),
+                        ("SendPreCommit", SendPreCommit, "RecvPreCommit",
+                        RecvPreCommit, countRecvPreCommit),
+                        ("SendCommit", SendCommit, "RecvCommit",
+                        RecvCommit, countRecvCommit),
+                    ]
+                    for it in print_loop:
+                        send_name, send_var, recv_name, recv_var, counter = it
+                        if is_selected(send_var[p, t, i, v]):
+                            sol_out.write(
+                                f'\t\t\t{p}-{i} {send_name} in {t}/{t + tTotal} at {v}\n')
+                        for j in R:
+                            if is_selected(recv_var[p, t, i, j, v]):
+                                counter += 1
+                                sol_out.write(
+                                    f'\t\t\t\t{p}-{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
+                    print_loop_cv = [
+                        ("SendCV", SendCV, "RecvCV", RecvCV, countRecvCV),
+                    ]
+                    for it in print_loop_cv:
+                        send_name, send_var, recv_name, recv_var, counter = it
+                        if is_selected(send_var[t, i, v]):
+                            sol_out.write(
+                                f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}\n')
+                        for j in R:
+                            if is_selected(recv_var[t, i, j, v]):
+                                counter += 1
+                                sol_out.write(
+                                    f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
 
-                if is_selected(BlockRelay[t, i, v]):
-                    sol_out.write(f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}\n')
-            sol_out.write(
-                f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
-                f'Commit={countRecvCommit} CV={countRecvCV}\n'
-            )
-    sol_out.write('========= DETAILED SOLUTION =========\n\n\n')
+                    if is_selected(BlockRelay[t, i, v]):
+                        sol_out.write(
+                            f'\t\t\t{i} BlockRelay in {t}/{t + tTotal} at {v}\n')
+                sol_out.write(
+                    f'\t\t\t{i} counterRcvd: PrepReq={countRecvPrepReq} PrepRes={countRecvPrepRes} '
+                    f'Commit={countRecvCommit} CV={countRecvCV}\n'
+                )
+        sol_out.write('========= DETAILED SOLUTION {p}=========\n\n\n')
 
     if status == OptimizationStatus.OPTIMAL:
         sol_out.write(f'optimal solution cost {m.objective_value} found\n')
     elif status == OptimizationStatus.FEASIBLE:
-        sol_out.write(f'sol.cost {m.objective_value} found, best possible: {m.objective_bound}\n')
+        sol_out.write(
+            f'sol.cost {m.objective_value} found, best possible: {m.objective_bound}\n')
     elif status == OptimizationStatus.NO_SOLUTION_FOUND:
-        sol_out.write(f'no feasible solution found, upper bound is: {m.objective_bound}\n')
+        sol_out.write(
+            f'no feasible solution found, upper bound is: {m.objective_bound}\n')
 
     for k in range(m.num_solutions):
         sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}\n')
@@ -758,7 +802,8 @@ with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     view_title = bool(get_args_value("view_title", True))
     first_block = int(get_args_value("first_block", 1))
     rand_pos = bool(get_args_value("rand_pos", False, True))
-    generate_full_latex = bool(get_args_value("generate_full_latex", True, True))
+    generate_full_latex = bool(get_args_value(
+        "generate_full_latex", True, True))
     circle_all_send = bool(get_args_value("circle_all_send", False, True))
     execution_draw.draw_tikzpicture(
         view_title=view_title, first_block=first_block, rand_pos=rand_pos,
