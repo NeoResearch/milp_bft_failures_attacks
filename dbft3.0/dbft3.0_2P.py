@@ -824,18 +824,20 @@ execution_draw = ExecutionDraw(
     primary=Primary, block_relays=BlockRelay, multiple_primary=True,
 )
 
+view_title = bool(get_args_value("view_title", True))
+first_block = int(get_args_value("first_block", 1))
+rand_pos = bool(get_args_value("rand_pos", False, True))
+generate_full_latex = bool(get_args_value("generate_full_latex", True, True))
+circle_all_send = bool(get_args_value("circle_all_send", False, True))
+
+print(f'\nview_title:{view_title}\tfirst_block:{first_block}\trand_pos:{rand_pos}\tgenFullLatex:{generate_full_latex}\tcircle:{circle_all_send}')
+
 for priority in range(1, 3):
     with open(f"{drawing_file_name}_p{priority}.tex", 'w') as tex_out:
-        view_title = bool(get_args_value("view_title", True))
-        first_block = int(get_args_value("first_block", 1))
-        rand_pos = bool(get_args_value("rand_pos", False, True))
-        generate_full_latex = bool(get_args_value(
-            "generate_full_latex", True, True))
-        circle_all_send = bool(get_args_value("circle_all_send", False, True))
         execution_draw.draw_tikzpicture(
-            view_title=view_title, first_block=first_block, rand_pos=rand_pos,
+            view_title=view_title, first_block=first_block, rand_pos=False,
             generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
             out=tex_out, priority=priority
         )
-
     generate_pdf_file(f"{drawing_file_name}_p{priority}")
+    print(f'File Generated for {priority}')
