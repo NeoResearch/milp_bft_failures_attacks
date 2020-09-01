@@ -428,7 +428,7 @@ for (i, j, v) in product(R_OK, R_OK, V):
         add_var_loop = [
             # In particular, when only CV is forced, and numberrounds minimized, commits are relayed and lost.
             # On the other hand, enabling it and commits together, model can only find N rounds as minimum
-            (RecvCV, SendCV, "cvReceivedNonByz"),
+            # (RecvCV, SendCV, "cvReceivedNonByz"),
         ]
         for it in add_var_loop:
             recv_var, send_var, it_name = it
@@ -574,6 +574,28 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
             f"{it_name}({p},{i},{v},{t})",
         )
 
+# Constraints for honest node to avoid responding to different priorities
+for (i, v, t) in product(R_OK, V, T - {1}):
+    # LINKS CV AND PrepReq,PrepRes and Commit
+    add_var_loop = [
+        (SendPrepReq, SendPrepReq, "noAttackIIPrepReq"),
+        (SendPrepRes, SendPrepRes, "noAttackIIPrepRes"),
+        (SendPreCommit, SendPreCommit, "noAttackIIPreCommit"),
+        (SendCommit, SendCommit, "noAttackIICommit"),
+    ]
+    for it in add_var_loop:
+        send_var, send_var2, it_name = it
+        m += (
+            send_var[1, t, i, v]
+            <= 1 - xsum(send_var2[2, t2, i, v] for t2 in T if 1 < t2 <= t),
+            f"{it_name}1({i},{v},{t})",
+        )
+        m += (
+            send_var[2, t, i, v]
+            <= 1 - xsum(send_var2[1, t2, i, v] for t2 in T if 1 < t2 <= t),
+            f"{it_name}2({i},{v},{t})",
+        )                  
+
 for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     add_var_loop = [
@@ -590,7 +612,6 @@ for (i, v, t) in product(R_OK, V, T - {1}):
             f"{it_name}({i},{v},{t})",
         )
 
-# TODO
 for (p, i, v) in product(P, R_OK, V - {1}):
     # LINKS BlockRelayed and LIMITS in past views
     m += (
