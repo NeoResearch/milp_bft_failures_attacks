@@ -1,11 +1,10 @@
-from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from itertools import product
 from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
 from datetime import datetime
 import sys
 from pathlib import Path
 sys.path.append(str(Path('.').absolute().parent))
-
+from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
     if f"--{name}" in sys.argv:
@@ -58,7 +57,6 @@ M = 2 * f + 1
 tMax = int(get_args_value("tMax", 8))
 
 SPEEDUP = bool(get_args_value("speedup", False, True))
-
 
 print(
     f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
@@ -129,6 +127,8 @@ SendPrepReq = create_decision_var_4_ptiv("SendPrepReq")
 SendPrepRes = create_decision_var_4_ptiv("SendPrepRes")
 SendPreCommit = create_decision_var_4_ptiv("SendPreCommit")
 SendCommit = create_decision_var_4_ptiv("SendCommit")
+AllowByPreCommit = create_decision_var_4_ptiv("AllowByPreCommit")
+AllowByPrepRes = create_decision_var_4_ptiv("AllowByPrepRes")
 BlockRelay = create_decision_var_4_ptiv("BlockRelay")
 SendCV = create_decision_var_3_tiv("SendCV")
 
@@ -239,10 +239,33 @@ for (t, i, v) in product(T - {1}, R, V):
         f"preCommitSendIfHonestP2harderM({t},{i},{v})",
     )
     m += (
-        SendCommit[1, t, i, v]
-        <= (1 / M) * xsum(RecvPreCommit[1, t2, i, j, v] for t2 in T if t2 <= t for j in R) + SPEEDUP * (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
-        f"commitSentIfMPreCommits1WithSpeedUp({t},{i},{v})",
+        AllowByPreCommit[1, t, i, v]
+        <= (1 / M) * xsum(RecvPreCommit[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
+        f"allowCommitByPreCommit({t},{i},{v})",
     )
+    m += (
+        AllowByPrepRes[1, t, i, v]
+        <= (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
+        f"allowCommitByPrepRes({t},{i},{v})",
+    ) 
+    m += (
+        AllowByPreCommit[1, t, i, v] + AllowByPrepRes[1, t, i, v]
+        <= 1,
+        f"allowCommitByPrepResOrPreCommit({t},{i},{v})",
+    )
+    # This IF can be removed in the future - now it is here just for testing with and without speedup TODO   
+    if SPEEDUP:
+        m += (
+            SendCommit[1, t, i, v]
+            <= AllowByPreCommit[1, t, i, v] + AllowByPrepRes[1, t, i, v],
+            f"commitSentIfMPreCommits1WithSpeedUp({t},{i},{v})",
+        )
+    else:
+        m += (
+            SendCommit[1, t, i, v]
+            <= AllowByPreCommit[1, t, i, v],
+            f"commitSentIfMPreCommits1WithoutSpeedUp({t},{i},{v})",
+        ) 
     m += (
         SendCommit[2, t, i, v]
         <= (1 / M) * xsum(RecvPreCommit[2, t2, i, j, v] for t2 in T if t2 <= t for j in R),
