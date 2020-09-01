@@ -63,7 +63,7 @@ M = 2 * f + 1
 # Discretization per round (view)
 tMax = int(get_args_value("tMax", 8))
 
-SPEEDUP = int(get_args_value("speedup", 0))
+SPEEDUP = bool(get_args_value("speedup", False, True))
 
 print(f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
 
@@ -540,7 +540,7 @@ for (i, v) in product(R_OK, V - {1}):
     m += (
         xsum(SendCV[t, i, v] for t in T - {1})
         >= 1 - xsum(SendCommit[p, t, i, v2] for t in T - {1} for v2 in V if v2 <= v for p in P) - (
-                    1 - xsum(Primary[1, ii, v - 1] for ii in R)),
+                1 - xsum(Primary[1, ii, v - 1] for ii in R)),
         f"assertSendCVIfNotCommitAndYesPrimary({i},{v})",
     )
 
@@ -701,13 +701,11 @@ if msgsWeight != 0:
 if minimization:
     m.objective = minimize(
         totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
-    print(
-        f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+    print(f'\nMINIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 if not minimization:
     m.objective = maximize(
         totalBlockRelayed * blocksWeight + numberOfRounds * numberOfRoundsWeight + msgsWeight * totalNumberMsgs)
-    print(
-        f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
+    print(f'MAXIMIZE with blocksWeight={blocksWeight} numberOfRoundsWeight={numberOfRoundsWeight}\n')
 # OTHER POSSIBLE OJECTIVES such as counting total number of messages in order to maximize communication and conflicts
 # Exponentially penalize extra view (similar to what time does to an attacker that tries to delay messages)
 # m.objective = minimize(totalBlockRelayed*11111 + xsum(Primary[i, v]*10**v  for (i, v) in product(R, V)));
@@ -782,26 +780,22 @@ if not skip_solver:
                         for it in print_loop:
                             send_name, send_var, recv_name, recv_var, counter = it
                             if is_selected(send_var[p, t, i, v]):
-                                sol_out.write(
-                                    f'\t\t\t{p}-{i} {send_name} in {t}/{t + tTotal} at {v}\n')
+                                sol_out.write(f'\t\t\t{p}-{i} {send_name} in {t}/{t + tTotal} at {v}\n')
                             for j in R:
                                 if is_selected(recv_var[p, t, i, j, v]):
                                     counter += 1
-                                    sol_out.write(
-                                        f'\t\t\t\t{p}-{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
+                                    sol_out.write(f'\t\t\t\t{p}-{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
                         print_loop_cv = [
                             ("SendCV", SendCV, "RecvCV", RecvCV, countRecvCV),
                         ]
                         for it in print_loop_cv:
                             send_name, send_var, recv_name, recv_var, counter = it
                             if is_selected(send_var[t, i, v]):
-                                sol_out.write(
-                                    f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}\n')
+                                sol_out.write(f'\t\t\t{i} {send_name} in {t}/{t + tTotal} at {v}\n')
                             for j in R:
                                 if is_selected(recv_var[t, i, j, v]):
                                     counter += 1
-                                    sol_out.write(
-                                        f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
+                                    sol_out.write(f'\t\t\t\t{i} {recv_name} in {t}/{t + tTotal} from {j} at {v}\n')
 
                         if is_selected(BlockRelay[p, t, i, v]):
                             sol_out.write(
@@ -845,14 +839,19 @@ else:
 
     execution_draw.dump(drawing_file_name_bkp)
 
+view_title = bool(get_args_value("view_title", True))
+first_block = int(get_args_value("first_block", 1))
+rand_pos = bool(get_args_value("rand_pos", False, True))
+generate_full_latex = bool(get_args_value("generate_full_latex", True, True))
+circle_all_send = bool(get_args_value("circle_all_send", False, True))
+
+print(
+    f'\nview_title:{view_title}\tfirst_block:{first_block}\trand_pos:{rand_pos}\t'
+    f'genFullLatex:{generate_full_latex}\tcircle:{circle_all_send}'
+)
+
 for priority in range(1, 3):
     with open(f"{drawing_file_name}_p{priority}.tex", 'w') as tex_out:
-        view_title = bool(get_args_value("view_title", True))
-        first_block = int(get_args_value("first_block", 1))
-        rand_pos = bool(get_args_value("rand_pos", False, True))
-        generate_full_latex = bool(get_args_value(
-            "generate_full_latex", True, True))
-        circle_all_send = bool(get_args_value("circle_all_send", False, True))
         execution_draw.draw_tikzpicture(
             view_title=view_title, first_block=first_block, rand_pos=rand_pos,
             generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
@@ -860,3 +859,4 @@ for priority in range(1, 3):
         )
 
     generate_pdf_file(f"{drawing_file_name}_p{priority}")
+    print(f'File {drawing_file_name}_p{priority} generated for {priority}')
