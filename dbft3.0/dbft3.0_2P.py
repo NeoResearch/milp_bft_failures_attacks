@@ -796,8 +796,8 @@ quit()
 with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     execution_draw = ExecutionDraw(
         tMax, N, f, M,
-        SendPrepReq, SendPrepRes, SendCommit, SendCV,
-        RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
+        SendPrepReq, SendPrepRes, SendPreCommit, SendCommit, SendCV,
+        RecvPrepReq, RecvPrepResp, RecvPreCommit, RecvCommit, RecvCV,
         Primary, BlockRelay
     )
     view_title = bool(get_args_value("view_title", True))

@@ -9,8 +9,9 @@ from drawer import TikzDrawer
 class ArrowMessageType(Enum):
     PrepReq = 1
     PrepRes = 2
-    Commit = 3
-    CV = 4
+    PreCommit = 3
+    Commit = 4
+    CV = 5
 
 
 class ArrowMessage(object):
@@ -71,8 +72,8 @@ def is_selected(the_var: object):
 class ExecutionDraw(object):
     def __init__(
             self, view_size: int, n: int, f: int, m: int,
-            send_prep_req: dict, send_prep_res: dict, send_commit: dict, send_cv: dict,
-            recv_prep_req: dict, recv_prep_res: dict, recv_commit: dict, recv_cv: dict,
+            send_prep_req: dict, send_prep_res: dict, send_pre_commit: dict, send_commit: dict, send_cv: dict,
+            recv_prep_req: dict, recv_prep_res: dict, recv_pre_commit: dict, recv_commit: dict, recv_cv: dict,
             primary: dict, block_relays: dict
     ):
         self.view_size = view_size
@@ -98,7 +99,7 @@ class ExecutionDraw(object):
                 print(f"The view {the_view.number} has no primary")
             return the_view
 
-        def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_send_msg_cv(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, v = it
@@ -110,7 +111,7 @@ class ExecutionDraw(object):
                     the_view.packs[(message_type, i)] = arrow_message
                     view[v] = the_view
 
-        def add_recv_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_recv_msg_cv(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, j, v = it
@@ -124,15 +125,43 @@ class ExecutionDraw(object):
                     arrow_message = the_view[(message_type, j)]
                     arrow_message.add_destination(i, t + (v - 1) * view_size)
 
+        def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+            for it, variable in values.items():
+                if is_selected(variable):
+                    p, t, i, v = it
+                    the_view = get_or_create_view(view, v)
+                    arrow_message = the_view.packs.get(
+                        (message_type, i), PackMessage(message_type, t + (v - 1) * view_size, i, v)
+                    )
+
+                    the_view.packs[(message_type, i)] = arrow_message
+                    view[v] = the_view
+
+        def add_recv_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+            for it, variable in values.items():
+                if is_selected(variable):
+                    p, t, i, j, v = it
+                    if v not in view:
+                        raise Exception(f"View {v} not found")
+
+                    the_view = get_or_create_view(view, v).packs
+                    if (message_type, j) not in the_view:
+                        raise Exception(f"{(message_type, j)} not in view {v}")
+
+                    arrow_message = the_view[(message_type, j)]
+                    arrow_message.add_destination(i, t + (v - 1) * view_size)
+
         add_send_msg(self.views, view_size, ArrowMessageType.PrepReq, send_prep_req)
         add_send_msg(self.views, view_size, ArrowMessageType.PrepRes, send_prep_res)
+        add_send_msg(self.views, view_size, ArrowMessageType.PreCommit, send_pre_commit)
         add_send_msg(self.views, view_size, ArrowMessageType.Commit, send_commit)
-        add_send_msg(self.views, view_size, ArrowMessageType.CV, send_cv)
+        add_send_msg_cv(self.views, view_size, ArrowMessageType.CV, send_cv)
 
         add_recv_msg(self.views, view_size, ArrowMessageType.PrepReq, recv_prep_req)
         add_recv_msg(self.views, view_size, ArrowMessageType.PrepRes, recv_prep_res)
+        add_recv_msg(self.views, view_size, ArrowMessageType.PreCommit, recv_pre_commit)
         add_recv_msg(self.views, view_size, ArrowMessageType.Commit, recv_commit)
-        add_recv_msg(self.views, view_size, ArrowMessageType.CV, recv_cv)
+        add_recv_msg_cv(self.views, view_size, ArrowMessageType.CV, recv_cv)
 
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
@@ -144,6 +173,7 @@ class ExecutionDraw(object):
         send_receive_variables_options = {
             ArrowMessageType.PrepReq: ['thick', '->', 'color=blue'],
             ArrowMessageType.PrepRes: ['thick', '->', 'color=green'],
+            ArrowMessageType.PreCommit: ['thick', '->', 'color=brown'],
             ArrowMessageType.Commit: ['thick', '->', 'color=yellow'],
             ArrowMessageType.CV: ['thick', '->', 'dashed', 'color=red'],
         }
