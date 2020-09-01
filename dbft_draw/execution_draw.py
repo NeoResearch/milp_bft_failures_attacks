@@ -130,7 +130,7 @@ class ExecutionDraw(object):
                     if v not in view[p]:
                         raise Exception(f"View {v} not found")
 
-                    the_view = get_or_create_view(view, v).packs
+                    the_view = get_or_create_view(view, v, p).packs
                     if (message_type, j) not in the_view:
                         raise Exception(f"{(message_type, j)} not in view {v}")
 
@@ -161,7 +161,8 @@ class ExecutionDraw(object):
                     else:
                         t, i, j, v = it
                         p = 1
-                    if v not in view:
+
+                    if v not in view[p]:
                         raise Exception(f"View {v} not found")
 
                     the_view = get_or_create_view(view, v, p).packs
