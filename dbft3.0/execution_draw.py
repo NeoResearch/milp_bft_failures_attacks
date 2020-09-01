@@ -51,14 +51,16 @@ class PackMessage(object):
 
 
 class BlockRelay(object):
-    def __init__(self, t, node, view):
+    def __init__(self, priority, t, node, view):
+        self.time = priority
         self.time = t
         self.node = node
         self.view = view
 
 
 class View(object):
-    def __init__(self, number, primary):
+    def __init__(self, priority, number, primary):
+        self.number = priority
         self.number = number
         self.primary = primary
         self.packs = {}
@@ -84,16 +86,16 @@ class ExecutionDraw(object):
 
         for it, variable in primary.items():
             if is_selected(variable):
-                node, view = it
-                self.views[view] = View(view, node)
+                p, node, view = it
+                self.views[view] = View(p, view, node)
 
         for it, variable in block_relays.items():
             if is_selected(variable):
-                t, node, view = it
-                self.views[view].block_relay.append(BlockRelay(t, node, view))
+                p, t, node, view = it
+                self.views[view].block_relay.append(BlockRelay(p, t, node, view))
 
         def get_or_create_view(view: dict, number: int):
-            the_view = view.get(number, View(number, None))
+            the_view = view.get(number, View(1, number, None))
             view[number] = the_view
             if not the_view.primary:
                 print(f"The view {the_view.number} has no primary")
