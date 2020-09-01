@@ -33,12 +33,13 @@ def get_args_value(name: str, default=None, is_bool: bool = False):
 minimization = bool(get_args_value("minimization", True, True))
 maximization = bool(get_args_value("maximization", False, True))
 if maximization:
-    minimization = False    
+    minimization = False
 #blocksWeight
 blocksWeight = int(get_args_value("w1", 1000))
 #numberOfRoundsWeight
 numberOfRoundsWeight = int(get_args_value("w2", 100))
 msgsWeight = int(get_args_value("w3", 0))
+
 
 # Print all arguments
 print(f'\nTotal {len(sys.argv)} and argument List: {sys.argv}')

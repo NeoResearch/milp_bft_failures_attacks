@@ -1,8 +1,10 @@
+from pathlib import Path
 from itertools import product
-from mip import Model, CBC, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
-from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
+from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
 from datetime import datetime
 import sys
+sys.path.append(str(Path('.').absolute().parent))
+from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
@@ -791,25 +793,28 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
         sol_out.write(f'Solution {k} with Blocks {m.objective_values[k]}\n')
     sol_out.write("\n")
 
-quit()
+# quit()
 
-with open(f"{drawing_file_name}.tex", 'w') as tex_out:
-    execution_draw = ExecutionDraw(
-        tMax, N, f, M,
-        SendPrepReq, SendPrepRes, SendPreCommit, SendCommit, SendCV,
-        RecvPrepReq, RecvPrepResp, RecvPreCommit, RecvCommit, RecvCV,
-        Primary, BlockRelay
-    )
-    view_title = bool(get_args_value("view_title", True))
-    first_block = int(get_args_value("first_block", 1))
-    rand_pos = bool(get_args_value("rand_pos", False, True))
-    generate_full_latex = bool(get_args_value(
-        "generate_full_latex", True, True))
-    circle_all_send = bool(get_args_value("circle_all_send", False, True))
-    execution_draw.draw_tikzpicture(
-        view_title=view_title, first_block=first_block, rand_pos=rand_pos,
-        generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
-        out=tex_out,
-    )
 
-generate_pdf_file(drawing_file_name)
+execution_draw = ExecutionDraw(
+    tMax, N, f, M,
+    SendPrepReq, SendPrepRes, SendPreCommit, SendCommit, SendCV,
+    RecvPrepReq, RecvPrepResp, RecvPreCommit, RecvCommit, RecvCV,
+    Primary, BlockRelay, multiple_primary=True,
+)
+
+for priority in range(1, 3):
+    with open(f"{drawing_file_name}_p{priority}.tex", 'w') as tex_out:
+        view_title = bool(get_args_value("view_title", True))
+        first_block = int(get_args_value("first_block", 1))
+        rand_pos = bool(get_args_value("rand_pos", False, True))
+        generate_full_latex = bool(get_args_value(
+            "generate_full_latex", True, True))
+        circle_all_send = bool(get_args_value("circle_all_send", False, True))
+        execution_draw.draw_tikzpicture(
+            view_title=view_title, first_block=first_block, rand_pos=rand_pos,
+            generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
+            out=tex_out, priority=priority
+        )
+
+    generate_pdf_file(f"{drawing_file_name}_p{priority}")
