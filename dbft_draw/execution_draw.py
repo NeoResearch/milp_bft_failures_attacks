@@ -2,7 +2,10 @@ import sys
 import random
 import subprocess
 import os
+import pickle
 from enum import Enum
+from typing import Dict, List, Iterable, NoReturn, Tuple, Optional, Set
+
 from dbft_draw.drawer import TikzDrawer
 
 
@@ -12,6 +15,9 @@ class ArrowMessageType(Enum):
     PreCommit = 3
     Commit = 4
     CV = 5
+
+    def has_priority(self):
+        return self != ArrowMessageType.CV
 
 
 class ArrowMessage(object):
@@ -30,7 +36,7 @@ class ArrowMessage(object):
         return f"{self.arrow_message_type.name}({self.start_time}, {self.node}, " \
                f"{self.end_time}, {self.destination}, {self.view})"
 
-    def is_loop(self):
+    def is_loop(self) -> bool:
         return self.node == self.destination and self.start_time == self.end_time
 
 
@@ -40,32 +46,32 @@ class PackMessage(object):
         self.node = node
         self.view = view
         self.t = t
-        self.__destinations = {}
+        self.__destinations: Dict[int, int] = {}
 
-    def add_destination(self, destination: int, t: int):
+    def add_destination(self, destination: int, t: int) -> NoReturn:
         self.__destinations[destination] = t
 
-    def arrows(self):
+    def arrows(self) -> Iterable[ArrowMessage]:
         for to, time_deliver in self.__destinations.items():
             yield ArrowMessage(self.arrow_message_type, self.t, self.node, self.view, time_deliver, to)
 
 
 class BlockRelay(object):
-    def __init__(self, t, node, view):
+    def __init__(self, t: int, node: int, view: int):
         self.time = t
         self.node = node
         self.view = view
 
 
 class View(object):
-    def __init__(self, number, primary):
+    def __init__(self, number: int, primary: Optional[int]):
         self.number = number
         self.primary = primary
-        self.packs = {}
-        self.block_relay = []
+        self.packs: Dict[Tuple[ArrowMessageType, int], PackMessage] = {}
+        self.block_relay: List[BlockRelay] = []
 
 
-def is_selected(the_var: object):
+def is_selected(the_var: object) -> bool:
     return the_var.x >= 0.999
 
 
@@ -80,7 +86,8 @@ class ExecutionDraw(object):
         self.n = n
         self.f = f
         self.m = m
-        self.views = {}
+        self.view_arrows: Dict[int, Dict[int, View]] = {}
+        self.priorities: Set[int] = set()
 
         for it, variable in primary.items():
             if is_selected(variable):
@@ -89,8 +96,9 @@ class ExecutionDraw(object):
                 else:
                     node, view = it
                     p = 1
-                self.views[p] = self.views.get(p, {})
-                self.views[p][view] = View(view, node)
+                self.priorities.add(p)
+                self.view_arrows[view] = self.view_arrows.get(view, {})
+                self.view_arrows[view][p] = View(view, node)
 
         for it, variable in block_relays.items():
             if is_selected(variable):
@@ -99,35 +107,43 @@ class ExecutionDraw(object):
                 else:
                     t, node, view = it
                     p = 1
-                self.views[p] = self.views.get(p, {})
-                self.views[p][view].block_relay.append(BlockRelay(t, node, view))
+                self.priorities.add(p)
+                self.view_arrows[view][p] = self.view_arrows[view].get(p, {})
+                self.view_arrows[view][p].block_relay.append(BlockRelay(t, node, view))
 
-        def get_or_create_view(view: dict, number: int, p: int = 1):
-            view[p] = self.views.get(p, {})
-            the_view = view[p].get(number, View(number, None))
-            view[p][number] = the_view
+        def get_or_create_view(view: Dict[int, Dict[int, View]], number: int, p: int = 1) -> View:
+            the_view = view.get(number, {})
+            view[number] = the_view
+            the_view = the_view.get(p, View(number, None))
+            view[number][p] = the_view
             if not the_view:
                 print(f"The view {the_view.number} has no primary")
             return the_view
 
-        def add_send_msg_cv(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_send_msg_cv(
+                view: Dict[int, Dict[int, View]], view_size: int, message_type: ArrowMessageType, values: dict
+        ) -> NoReturn:
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, v = it
-                    the_view = get_or_create_view(view, v)
+                    p = 1
+                    the_view = get_or_create_view(view, v, p)
                     arrow_message = the_view.packs.get(
                         (message_type, i), PackMessage(message_type, t + (v - 1) * view_size, i, v)
                     )
 
                     the_view.packs[(message_type, i)] = arrow_message
                     # view[v] = the_view
+                    # arrow_message.priorities.add(p)
 
-        def add_recv_msg_cv(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_recv_msg_cv(
+                view: Dict[int, Dict[int, View]], view_size: int, message_type: ArrowMessageType, values: dict
+        ) -> NoReturn:
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, j, v = it
                     p = 1
-                    if v not in view[p]:
+                    if v not in view:
                         raise Exception(f"View {v} not found")
 
                     the_view = get_or_create_view(view, v, p).packs
@@ -136,8 +152,9 @@ class ExecutionDraw(object):
 
                     arrow_message = the_view[(message_type, j)]
                     arrow_message.add_destination(i, t + (v - 1) * view_size)
+                    # arrow_message.priorities.add(p)
 
-        def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_send_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict) -> NoReturn:
             for it, variable in values.items():
                 if is_selected(variable):
                     if multiple_primary:
@@ -149,11 +166,12 @@ class ExecutionDraw(object):
                     arrow_message = the_view.packs.get(
                         (message_type, i), PackMessage(message_type, t + (v - 1) * view_size, i, v)
                     )
+                    # arrow_message.priorities.add(p)
 
                     the_view.packs[(message_type, i)] = arrow_message
                     # view[p] = the_view
 
-        def add_recv_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict):
+        def add_recv_msg(view: dict, view_size: int, message_type: ArrowMessageType, values: dict) -> NoReturn:
             for it, variable in values.items():
                 if is_selected(variable):
                     if multiple_primary:
@@ -162,7 +180,7 @@ class ExecutionDraw(object):
                         t, i, j, v = it
                         p = 1
 
-                    if v not in view[p]:
+                    if v not in view:
                         raise Exception(f"View {v} not found")
 
                     the_view = get_or_create_view(view, v, p).packs
@@ -170,21 +188,38 @@ class ExecutionDraw(object):
                         raise Exception(f"{(message_type, j)} not in view {v}")
 
                     arrow_message = the_view[(message_type, j)]
+                    # arrow_message.priorities.add(p)
                     arrow_message.add_destination(i, t + (v - 1) * view_size)
 
-        add_send_msg(self.views, view_size, ArrowMessageType.PrepReq, send_prep_req)
-        add_send_msg(self.views, view_size, ArrowMessageType.PrepRes, send_prep_res)
+        add_send_msg(self.view_arrows, view_size, ArrowMessageType.PrepReq, send_prep_req)
+        add_send_msg(self.view_arrows, view_size, ArrowMessageType.PrepRes, send_prep_res)
         if multiple_primary:
-            add_send_msg(self.views, view_size, ArrowMessageType.PreCommit, send_pre_commit)
-        add_send_msg(self.views, view_size, ArrowMessageType.Commit, send_commit)
-        add_send_msg_cv(self.views, view_size, ArrowMessageType.CV, send_cv)
+            add_send_msg(self.view_arrows, view_size, ArrowMessageType.PreCommit, send_pre_commit)
+        add_send_msg(self.view_arrows, view_size, ArrowMessageType.Commit, send_commit)
+        add_send_msg_cv(self.view_arrows, view_size, ArrowMessageType.CV, send_cv)
 
-        add_recv_msg(self.views, view_size, ArrowMessageType.PrepReq, recv_prep_req)
-        add_recv_msg(self.views, view_size, ArrowMessageType.PrepRes, recv_prep_res)
+        add_recv_msg(self.view_arrows, view_size, ArrowMessageType.PrepReq, recv_prep_req)
+        add_recv_msg(self.view_arrows, view_size, ArrowMessageType.PrepRes, recv_prep_res)
         if multiple_primary:
-            add_recv_msg(self.views, view_size, ArrowMessageType.PreCommit, recv_pre_commit)
-        add_recv_msg(self.views, view_size, ArrowMessageType.Commit, recv_commit)
-        add_recv_msg_cv(self.views, view_size, ArrowMessageType.CV, recv_cv)
+            add_recv_msg(self.view_arrows, view_size, ArrowMessageType.PreCommit, recv_pre_commit)
+        add_recv_msg(self.view_arrows, view_size, ArrowMessageType.Commit, recv_commit)
+        add_recv_msg_cv(self.view_arrows, view_size, ArrowMessageType.CV, recv_cv)
+
+    def dump(self, file_name: str):
+        with open(file_name, 'wb') as the_file:
+            pickle.dump(self.__dict__, the_file)
+
+    @staticmethod
+    def from_file(file_name: str):
+        value = ExecutionDraw(
+            view_size=0, n=0, f=0, m=0,
+            send_prep_req={}, send_prep_res={}, send_pre_commit={}, send_commit={}, send_cv={},
+            recv_prep_req={}, recv_prep_res={}, recv_pre_commit={}, recv_commit={}, recv_cv={},
+            primary={}, block_relays={},
+        )
+        with open(file_name, 'rb') as the_file:
+            value.__dict__ = pickle.load(the_file)
+        return value
 
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
@@ -202,19 +237,12 @@ class ExecutionDraw(object):
         }
 
         with TikzDrawer(out, generate_full_latex) as my_drawer:
-            for view in range(len(self.views[priority])):
-                if view_title:
-                    my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
-                if view > 0:
-                    my_drawer.line(
-                        (view * self.view_size, 0), (view * self.view_size, self.n + 1),
-                        ["thick", "-", "color=lightgray", "dashed"]
-                    )
+            self.draw_title_and_lines(my_drawer, view_title)
 
             for node in range(1, self.n + 1):
                 # Converting to start at zero
                 my_drawer.node(f"{node - 1}", (0, node))
-                my_drawer.line((1, node), (len(self.views) * self.view_size, node), ["thick", "dashed"])
+                my_drawer.line((1, node), (len(self.view_arrows) * self.view_size, node), ["thick", "dashed"])
 
             block_num = first_block
 
@@ -228,8 +256,11 @@ class ExecutionDraw(object):
                 )
                 circles[circle_pos] = circles.get(circle_pos, 0) + 1
 
-            for view_num in sorted(self.views[priority].keys()):
-                view = self.views[priority][view_num]
+            for view_num in sorted(self.view_arrows.keys()):
+                if priority not in self.view_arrows[view_num]:
+                    # Can we have a view that does not have all the priorities?
+                    continue
+                view = self.view_arrows[view_num][priority]
                 if view.primary:
                     # Converting to start at zero
                     my_drawer.node(
@@ -237,47 +268,79 @@ class ExecutionDraw(object):
                         ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5)
                     )
 
-                inc_block = False
-                for relay in view.block_relay:
-                    inc_block = True
-                    my_drawer.node(
-                        f"relay \\#{block_num}",
-                        ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
-                        []
-                    )
-                    add_circle(((relay.view - 1) * self.view_size + relay.time, relay.node))
-                if inc_block:
+                if self.draw_block_relay(add_circle, block_num, my_drawer, view):
                     block_num += 1
 
                 for _, pack in view.packs.items():
+                    # TODO fix me - no p for ArrowMessageType.CV
+                    # if not pack.check_priority(priority=priority):
+                    #     continue
+                    p = priority
+                    if not pack.arrow_message_type.has_priority():
+                        # In case of a CV message all the drawings should have the arrow
+                        p = 1
+
                     draw_circle = set()
                     for arrow in pack.arrows():
                         draw_circle.add(arrow.destination)
-                        if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
-                                and not (arrow.node == self.views[priority][arrow.view].primary and
-                                         arrow.arrow_message_type in primary_ignore_messages):
-                            first_val = random.uniform(-.1, .1) if rand_pos else 0
-                            second_val = random.uniform(-.1, .1) if rand_pos else 0
-                            my_drawer.line(
-                                (arrow.start_time, arrow.node),
-                                (arrow.end_time + first_val, arrow.destination + second_val),
-                                send_receive_variables_options[arrow.arrow_message_type]
-                            )
+                        self.draw_arrow(
+                            arrow, ignore_messages, my_drawer, primary_ignore_messages, p, rand_pos,
+                            send_receive_variables_options
+                        )
 
-                    if pack.view in self.views[priority]:
+                    if pack.view in self.view_arrows:
                         if circle_all_send or (len(draw_circle) == 1 and pack.node in draw_circle):
                             add_circle(
                                 (pack.t, pack.node),
                                 [send_receive_variables_options[pack.arrow_message_type][-1]]
                             )
 
-            if subtitle:
-                it = 2
-                for arrow_type, arrow_opt in send_receive_variables_options.items():
-                    if arrow_type not in ignore_messages:
-                        my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
-                        my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it), [])
-                        it += 1
+            self.draw_subtitle(ignore_messages, my_drawer, send_receive_variables_options, subtitle, priority)
+
+    def draw_block_relay(self, add_circle, block_num, my_drawer, view):
+        inc_block = False
+        for relay in view.block_relay:
+            inc_block = True
+            my_drawer.node(
+                f"relay \\#{block_num}",
+                ((relay.view - 1) * self.view_size + relay.time, relay.node + 0.5),
+                []
+            )
+            add_circle(((relay.view - 1) * self.view_size + relay.time, relay.node))
+        return inc_block
+
+    def draw_arrow(self, arrow, ignore_messages, my_drawer, primary_ignore_messages, priority, rand_pos,
+                   send_receive_variables_options):
+        if (not arrow.is_loop() and arrow.arrow_message_type not in ignore_messages) \
+                and not (arrow.node == self.view_arrows[arrow.view][priority].primary and
+                         arrow.arrow_message_type in primary_ignore_messages):
+            first_val = random.uniform(-.1, .1) if rand_pos else 0
+            second_val = random.uniform(-.1, .1) if rand_pos else 0
+            my_drawer.line(
+                (arrow.start_time, arrow.node),
+                (arrow.end_time + first_val, arrow.destination + second_val),
+                send_receive_variables_options[arrow.arrow_message_type]
+            )
+
+    def draw_subtitle(self, ignore_messages, my_drawer, send_receive_variables_options, subtitle, priority):
+        if subtitle:
+            it = 2
+            for arrow_type, arrow_opt in send_receive_variables_options.items():
+                if arrow_type not in ignore_messages:
+                    my_drawer.line((0, self.n + it), (.5, self.n + it), arrow_opt)
+                    my_drawer.node(f"{arrow_type.name}", (1.5, self.n + it), [])
+                    it += 1
+            my_drawer.node(f"Priority {priority}", (4, self.n + 2), [])
+
+    def draw_title_and_lines(self, my_drawer, view_title):
+        for view in range(len(self.view_arrows)):
+            if view_title:
+                my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
+            if view > 0:
+                my_drawer.line(
+                    (view * self.view_size, 0), (view * self.view_size, self.n + 1),
+                    ["thick", "-", "color=lightgray", "dashed"]
+                )
 
 
 def generate_pdf_file(drawing_file_name: str, remove_logs: bool = True):
