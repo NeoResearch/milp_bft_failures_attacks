@@ -1,10 +1,10 @@
+from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from itertools import product
 from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
 from datetime import datetime
 import sys
 from pathlib import Path
 sys.path.append(str(Path('.').absolute().parent))
-from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
@@ -57,7 +57,7 @@ M = 2 * f + 1
 # Discretization per round (view)
 tMax = int(get_args_value("tMax", 8))
 
-SPEEDUP = int(get_args_value("speedup", 0))
+SPEEDUP = bool(get_args_value("speedup", False, True))
 
 
 print(
@@ -594,7 +594,7 @@ for (i, v, t) in product(R_OK, V, T - {1}):
             send_var[2, t, i, v]
             <= 1 - xsum(send_var2[1, t2, i, v] for t2 in T if 1 < t2 <= t),
             f"{it_name}2({i},{v},{t})",
-        )                  
+        )
 
 for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
@@ -747,7 +747,7 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
 
     for p in P:
         sol_out.write(f'\n\n========= DETAILED SOLUTION {p} =========\n\n')
-        for v in V:            
+        for v in V:
             tTotal = (v - 1) * tMax
             sol_out.write(f'VIEW {v}\n')
             for i in R:
@@ -760,13 +760,13 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
                 for t in T:
                     print_loop = [
                         ("SendPrepReq", SendPrepReq, "RecvPrepReq",
-                        RecvPrepReq, countRecvPrepReq),
+                         RecvPrepReq, countRecvPrepReq),
                         ("SendPrepRes", SendPrepRes, "RecvPrepResp",
-                        RecvPrepResp, countRecvPrepRes),
+                         RecvPrepResp, countRecvPrepRes),
                         ("SendPreCommit", SendPreCommit, "RecvPreCommit",
-                        RecvPreCommit, countRecvPreCommit),
+                         RecvPreCommit, countRecvPreCommit),
                         ("SendCommit", SendCommit, "RecvCommit",
-                        RecvCommit, countRecvCommit),
+                         RecvCommit, countRecvCommit),
                     ]
                     for it in print_loop:
                         send_name, send_var, recv_name, recv_var, counter = it
