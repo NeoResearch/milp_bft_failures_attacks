@@ -797,10 +797,10 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
 
 
 execution_draw = ExecutionDraw(
-    tMax, N, f, M,
-    SendPrepReq, SendPrepRes, SendPreCommit, SendCommit, SendCV,
-    RecvPrepReq, RecvPrepResp, RecvPreCommit, RecvCommit, RecvCV,
-    Primary, BlockRelay, multiple_primary=True,
+    view_size=tMax, n=N, f=f, m=M,
+    send_prep_req=SendPrepReq, send_prep_res=SendPrepRes, send_pre_commit=SendPreCommit, send_commit=SendCommit, send_cv=SendCV,
+    recv_prep_req=RecvPrepReq, recv_prep_res=RecvPrepResp, recv_pre_commit=RecvPreCommit, recv_commit=RecvCommit, recv_cv=RecvCV,
+    primary=Primary, block_relays=BlockRelay, multiple_primary=True,
 )
 
 for priority in range(1, 3):

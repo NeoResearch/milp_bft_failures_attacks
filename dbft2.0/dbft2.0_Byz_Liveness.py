@@ -602,10 +602,10 @@ with open(f"{drawing_file_name}.out", 'w') as sol_out:
 
 with open(f"{drawing_file_name}.tex", 'w') as tex_out:
     execution_draw = ExecutionDraw(
-        tMax, N, f, M,
-        SendPrepReq, SendPrepRes, SendCommit, SendCV,
-        RecvPrepReq, RecvPrepResp, RecvCommit, RecvCV,
-        Primary, BlockRelay
+        view_size=tMax, n=N, f=f, m=M,
+        send_prep_req=SendPrepReq, send_prep_res=SendPrepRes, send_pre_commit={}, send_commit=SendCommit, send_cv=SendCV,
+        recv_prep_req=RecvPrepReq, recv_prep_res=RecvPrepResp, recv_pre_commit={}, recv_commit=RecvCommit, recv_cv=RecvCV,
+        primary=Primary, block_relays=BlockRelay,
     )
     view_title = bool(get_args_value("view_title", True))
     first_block = int(get_args_value("first_block", 1))

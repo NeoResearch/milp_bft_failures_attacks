@@ -126,7 +126,8 @@ class ExecutionDraw(object):
             for it, variable in values.items():
                 if is_selected(variable):
                     t, i, j, v = it
-                    if v not in view:
+                    p = 1
+                    if v not in view[p]:
                         raise Exception(f"View {v} not found")
 
                     the_view = get_or_create_view(view, v).packs
@@ -172,13 +173,15 @@ class ExecutionDraw(object):
 
         add_send_msg(self.views, view_size, ArrowMessageType.PrepReq, send_prep_req)
         add_send_msg(self.views, view_size, ArrowMessageType.PrepRes, send_prep_res)
-        add_send_msg(self.views, view_size, ArrowMessageType.PreCommit, send_pre_commit)
+        if multiple_primary:
+            add_send_msg(self.views, view_size, ArrowMessageType.PreCommit, send_pre_commit)
         add_send_msg(self.views, view_size, ArrowMessageType.Commit, send_commit)
         add_send_msg_cv(self.views, view_size, ArrowMessageType.CV, send_cv)
 
         add_recv_msg(self.views, view_size, ArrowMessageType.PrepReq, recv_prep_req)
         add_recv_msg(self.views, view_size, ArrowMessageType.PrepRes, recv_prep_res)
-        add_recv_msg(self.views, view_size, ArrowMessageType.PreCommit, recv_pre_commit)
+        if multiple_primary:
+            add_recv_msg(self.views, view_size, ArrowMessageType.PreCommit, recv_pre_commit)
         add_recv_msg(self.views, view_size, ArrowMessageType.Commit, recv_commit)
         add_recv_msg_cv(self.views, view_size, ArrowMessageType.CV, recv_cv)
 
