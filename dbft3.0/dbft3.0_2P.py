@@ -1,8 +1,8 @@
-from pathlib import Path
 from itertools import product
 from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
 from datetime import datetime
 import sys
+from pathlib import Path
 sys.path.append(str(Path('.').absolute().parent))
 from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 

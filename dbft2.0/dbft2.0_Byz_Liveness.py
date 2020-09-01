@@ -1,8 +1,10 @@
 from itertools import product
 from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
-from execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 from datetime import datetime
 import sys
+from pathlib import Path
+sys.path.append(str(Path('.').absolute().parent))
+from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
 
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
