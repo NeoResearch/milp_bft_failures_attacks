@@ -1,2 +1,0 @@
-# bft-vis
-BFT visualizer

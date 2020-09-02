@@ -3,6 +3,7 @@
 *.sol
 *.zip
 *.mst
+*.resp
 **/venv
 **/.idea
 **/__pycache__
