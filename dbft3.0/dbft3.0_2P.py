@@ -7,10 +7,6 @@ from pathlib import Path
 
 sys.path.append(str(Path('.').absolute().parent))
 from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
-<<<<<<< HEAD
-=======
-
->>>>>>> e55704de975a44e63d800e83329e6cde82fd2e05
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
     if f"--{name}" in sys.argv:
@@ -68,12 +64,7 @@ tMax = int(get_args_value("tMax", 8))
 
 SPEEDUP = bool(get_args_value("speedup", False, True))
 
-<<<<<<< HEAD
-print(
-    f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
-=======
 print(f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
->>>>>>> e55704de975a44e63d800e83329e6cde82fd2e05
 
 # custom data can be loaded here
 
