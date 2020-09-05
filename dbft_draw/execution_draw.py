@@ -226,8 +226,8 @@ class ExecutionDraw(object):
 
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
-            primary_ignore_messages: Set[ArrowMessageType] = set([ArrowMessageType.PrepRes]),
-            ignore_messages: Set[ArrowMessageType] = set(),
+            primary_ignore_messages: Set[ArrowMessageType] = {ArrowMessageType.PrepRes},
+            ignore_messages: Set[ArrowMessageType] = {},
             generate_full_latex: bool = True, circle_all_send: bool = False, circle_radius: float = .08,
             out: TextIO = sys.stdout, priority: int = 1, node_start_with_zero: bool = False, show_ruler: bool = True,
             view_start_with_zero: bool = True,
@@ -256,9 +256,9 @@ class ExecutionDraw(object):
                 # my_drawer.line((1, self.n + 0.87), (line_size, self.n + 0.87), ["ultra thin", "dashed"])
 
                 for it in range(1, line_size + 1):
-                    if it % 5 == 0:
-                        my_drawer.node(f"\\tiny {it}", (it, 0.58), [])
-                        my_drawer.node(f"\\tiny {it}", (it, self.n + 0.85), [])
+                    if (it % self.view_size) % 5 == 0:
+                        my_drawer.node(f"\\tiny {it % self.view_size}", (it, 0.58), [])
+                        my_drawer.node(f"\\tiny {it % self.view_size}", (it, self.n + 0.85), [])
                     else:
                         my_drawer.line((it, 0.51), (it, 0.65), ["thin"])
                         my_drawer.line((it, self.n + 0.95), (it, self.n + 0.81), ["thin"])
@@ -306,10 +306,12 @@ class ExecutionDraw(object):
 
                     if pack.view in self.view_arrows:
                         if circle_all_send or (len(draw_circle) == 1 and pack.node in draw_circle):
-                            add_circle(
-                                (pack.t, pack.node),
-                                [send_receive_variables_options[pack.arrow_message_type][-1]]
-                            )
+                            # Ignoring circle for primary
+                            if not (pack.arrow_message_type in primary_ignore_messages and pack.node == view.primary):
+                                add_circle(
+                                    (pack.t, pack.node),
+                                    [send_receive_variables_options[pack.arrow_message_type][-1]]
+                                )
 
             self.draw_subtitle(ignore_messages, my_drawer, send_receive_variables_options, subtitle, priority)
 
