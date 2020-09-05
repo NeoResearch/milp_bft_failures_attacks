@@ -1,5 +1,5 @@
 from itertools import product
-from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize
+from mip import Model, BINARY, INTEGER, CONTINUOUS, EQUAL, xsum, OptimizationStatus, maximize, minimize, GUROBI
 from datetime import datetime
 import sys
 import os
@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.append(str(Path('.').absolute().parent))
 from dbft_draw.execution_draw import is_selected, ExecutionDraw, generate_pdf_file
+
 
 def get_args_value(name: str, default=None, is_bool: bool = False):
     if f"--{name}" in sys.argv:
@@ -74,7 +75,7 @@ V = set(range(1, N + 1))
 T = set(range(1, tMax + 1))
 P = set(range(1, 2 + 1))
 
-m = Model()
+m = Model(solver_name=GUROBI)
 
 m.SearchEmphasis = 2
 m.max_gap = 0.005
@@ -251,7 +252,7 @@ for (t, i, v) in product(T - {1}, R, V):
         AllowByPrepRes[1, t, i, v]
         <= (1 / M) * xsum(RecvPrepResp[1, t2, i, j, v] for t2 in T if t2 <= t for j in R),
         f"allowCommitByPrepRes({t},{i},{v})",
-    ) 
+    )
     m += (
         AllowByPreCommit[1, t, i, v] + AllowByPrepRes[1, t, i, v]
         <= 1,
@@ -269,7 +270,7 @@ for (t, i, v) in product(T - {1}, R, V):
             SendCommit[1, t, i, v]
             <= AllowByPreCommit[1, t, i, v],
             f"commitSentIfMPreCommits1WithoutSpeedUp({t},{i},{v})",
-        ) 
+        )
     m += (
         SendCommit[2, t, i, v]
         <= (1 / M) * xsum(RecvPreCommit[2, t2, i, j, v] for t2 in T if t2 <= t for j in R),
@@ -864,7 +865,7 @@ else:
 
 view_title = bool(get_args_value("view_title", True))
 first_block = int(get_args_value("first_block", 1))
-rand_pos = bool(get_args_value("rand_pos", False, True))
+rand_pos = bool(get_args_value("rand_pos", True, True))
 generate_full_latex = bool(get_args_value("generate_full_latex", True, True))
 circle_all_send = bool(get_args_value("circle_all_send", False, True))
 
@@ -873,12 +874,18 @@ print(
     f'genFullLatex:{generate_full_latex}\tcircle:{circle_all_send}'
 )
 
+show_ruler = get_args_value("show-ruler", default=True, is_bool=True)
+node_start_with_zero = get_args_value("node-start-with-zero", default=False, is_bool=True)
+view_start_with_zero = get_args_value("view-start-with-zero", default=True, is_bool=True)
+
 for priority in range(1, 3):
     with open(f"{drawing_file_name}_p{priority}.tex", 'w') as tex_out:
         execution_draw.draw_tikzpicture(
             view_title=view_title, first_block=first_block, rand_pos=rand_pos,
             generate_full_latex=generate_full_latex, circle_all_send=circle_all_send,
-            out=tex_out, priority=priority
+            out=tex_out, priority=priority,
+            node_start_with_zero=node_start_with_zero, view_start_with_zero=view_start_with_zero,
+            show_ruler=show_ruler,
         )
 
     generate_pdf_file(f"{drawing_file_name}_p{priority}")

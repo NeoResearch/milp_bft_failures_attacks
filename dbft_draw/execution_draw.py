@@ -4,7 +4,7 @@ import subprocess
 import os
 import pickle
 from enum import Enum
-from typing import Dict, List, Iterable, NoReturn, Tuple, Optional, Set
+from typing import Dict, List, Iterable, NoReturn, Tuple, Optional, Set, TextIO
 
 from dbft_draw.drawer import TikzDrawer
 
@@ -53,7 +53,10 @@ class PackMessage(object):
 
     def arrows(self) -> Iterable[ArrowMessage]:
         for to, time_deliver in self.__destinations.items():
-            yield ArrowMessage(self.arrow_message_type, self.t, self.node, self.view, time_deliver, to)
+            yield ArrowMessage(
+                arrow_message_type=self.arrow_message_type, t=self.t, node=self.node, view=self.view,
+                t_destination=time_deliver, destination=to,
+            )
 
 
 class BlockRelay(object):
@@ -223,9 +226,11 @@ class ExecutionDraw(object):
 
     def draw_tikzpicture(
             self, view_title: bool = True, subtitle: bool = True, first_block: int = 1, rand_pos: bool = False,
-            primary_ignore_messages=set([ArrowMessageType.PrepRes]), ignore_messages=set([]),
-            generate_full_latex: bool = True, circle_all_send: bool = False, circle_radius=.08,
-            out=sys.stdout, priority: int = 1,
+            primary_ignore_messages: Set[ArrowMessageType] = set([ArrowMessageType.PrepRes]),
+            ignore_messages: Set[ArrowMessageType] = set(),
+            generate_full_latex: bool = True, circle_all_send: bool = False, circle_radius: float = .08,
+            out: TextIO = sys.stdout, priority: int = 1, node_start_with_zero: bool = False, show_ruler: bool = True,
+            view_start_with_zero: bool = True,
     ):
         random.seed(0)
         send_receive_variables_options = {
@@ -237,12 +242,26 @@ class ExecutionDraw(object):
         }
 
         with TikzDrawer(out, generate_full_latex) as my_drawer:
-            self.draw_title_and_lines(my_drawer, view_title)
+            self.draw_title_and_lines(my_drawer, view_title, view_start_with_zero)
 
+            line_size = len(self.view_arrows) * self.view_size
             for node in range(1, self.n + 1):
                 # Converting to start at zero
-                my_drawer.node(f"{node - 1}", (0, node))
-                my_drawer.line((1, node), (len(self.view_arrows) * self.view_size, node), ["thick", "dashed"])
+                my_drawer.node(f"{node - (1 if node_start_with_zero else 0)}", (0, node))
+                my_drawer.line((1, node), (line_size, node), ["thick", "dashed"])
+
+            # Drawing ruler
+            if show_ruler:
+                # my_drawer.line((1, 0.58), (line_size, 0.58), ["ultra thin", "dashed"])
+                # my_drawer.line((1, self.n + 0.87), (line_size, self.n + 0.87), ["ultra thin", "dashed"])
+
+                for it in range(1, line_size + 1):
+                    if it % 5 == 0:
+                        my_drawer.node(f"\\tiny {it}", (it, 0.58), [])
+                        my_drawer.node(f"\\tiny {it}", (it, self.n + 0.85), [])
+                    else:
+                        my_drawer.line((it, 0.51), (it, 0.65), ["thin"])
+                        my_drawer.line((it, self.n + 0.95), (it, self.n + 0.81), ["thin"])
 
             block_num = first_block
 
@@ -264,7 +283,7 @@ class ExecutionDraw(object):
                 if view.primary:
                     # Converting to start at zero
                     my_drawer.node(
-                        f"$Pr.^{view.primary - 1}$",
+                        f"$Pr.^{view.primary - (1 if node_start_with_zero else 0)}$",
                         ((view.number - 1) * self.view_size + 1.5, view.primary + 0.5)
                     )
 
@@ -272,9 +291,6 @@ class ExecutionDraw(object):
                     block_num += 1
 
                 for _, pack in view.packs.items():
-                    # TODO fix me - no p for ArrowMessageType.CV
-                    # if not pack.check_priority(priority=priority):
-                    #     continue
                     p = priority
                     if not pack.arrow_message_type.has_priority():
                         # In case of a CV message all the drawings should have the arrow
@@ -332,10 +348,11 @@ class ExecutionDraw(object):
                     it += 1
             my_drawer.node(f"Priority {priority}", (4, self.n + 2), [])
 
-    def draw_title_and_lines(self, my_drawer, view_title):
+    def draw_title_and_lines(self, my_drawer, view_title, view_start_with_zero: bool):
         for view in range(len(self.view_arrows)):
             if view_title:
-                my_drawer.node(f"View {view}", (self.view_size / 2 + view * self.view_size, 0))
+                view_delta = (1 if not view_start_with_zero else 0)
+                my_drawer.node(f"View {view + view_delta}", (self.view_size / 2 + view * self.view_size, 0))
             if view > 0:
                 my_drawer.line(
                     (view * self.view_size, 0), (view * self.view_size, self.n + 1),
