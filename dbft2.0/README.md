@@ -15,6 +15,12 @@ python3 dbft2.0_Byz_Liveness.py --minimization --w1=1000 --w2=100 --w3=-1
 # MINIMIZE WITH 1000 as weight for blocks and 100 for number of rounds and -1 for number of msgs sent.
 # In this sense, it will also try to send and receive as much message as possible
 
+# Problem parameters:
+# N(int): Defines problems param N
+--N
+# tMax: Defines problems param tMax
+--tMax
+
 # Other options are:
 # generate_full_latex: defines if .pdf files will be generated (TRUE as default)
 --generate_full_latex
