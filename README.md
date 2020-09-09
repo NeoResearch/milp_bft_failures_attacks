@@ -6,12 +6,11 @@ Along with the models you can find examples for generating .lp files, which can 
 
 ## Executing 
 
-### Python-Mip
+### Python-Mip (recommended - updated for both dBFT 2.0 and dBFT 3.0 proposal)
 
-You can configure solver by modifying file `dbft2.0/dbft2.0_Byz_Liveness.py` or calling with with arguments, as detailed on the [dBFT 2.0 README](dbft2.0/README.md) or [dBFT 3.0 README](dbft3.0/README.md);
+You can configure solver by modifying file directly modifying the Python file (following [python-mip guidelines](https://docs.python-mip.com])) or calling it with arguments, as detailed on the [dBFT 2.0 README](dbft2.0/README.md) or [dBFT 3.0 README](dbft3.0/README.md);
 
-
-### Generating a model with AMPL
+### Generating a model with AMPL (deprecated - but still works as a didatic example)
 
 If you want to generate a model for dBFT 1.0, dBFT 2.0 and dBFT 3.0 we suggest the following commands for converting (examples on dBFT 1.0):
 
