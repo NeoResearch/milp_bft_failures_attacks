@@ -380,6 +380,13 @@ for (p, t, i, j, v) in product(P, T - {1}, R, R, V):
         >= RecvPrepReq[p, t, i, j, v],
         "prepResReceivedAlongWithPrepReq(%s,%s,%s,%s,%s)" % (p, t, i, j, v),
     )
+# Force the node to Received PrepReq if PrepRes of Primary has been received (in dBFT we call all as Preparation)
+for (p, t, i, j, v) in product(P, T - {1}, R, R, V):
+    m += (
+        RecvPrepReq[p, t, i, j, v]
+        >= RecvPrepResp[p, t, i, j, v] -  (1 - Primary[p, j, v]),
+        "prepReqReceivedAlongWithPrepRes(%s,%s,%s,%s,%s)" % (p, t, i, j, v),
+    )
 
 """
 MARK A PAYLOAD AS RECEIVED ONLY ONCE PER VIEW
