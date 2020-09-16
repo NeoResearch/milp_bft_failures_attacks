@@ -31,6 +31,17 @@ python3 dbft3.0_2P.py --minimization --w1=1000 --w2=100 --w3=-1
 # rand_pos: generates a random position in order to avoid sobreposition
 --rand_pos
 ```
+# Recommended analysis
+
+```bash
+# Maximize number of blocks, number of messages and views
+python3 dbft3.0_2P.py --maximization --w1=1000 --w2=100 --w3=1 --speedup --circle_all_send --rand_pos
+# Maximize number of blocks, views with minimal number of messages
+python3 dbft3.0_2P.py --maximization --w1=1000 --w2=100 --w3=-1 --speedup --circle_all_send --rand_pos
+# Maximize number of blocks and minimize number of views and number of messages
+python3 dbft3.0_2P.py --maximization --w1=1000 --w2=-100 --w3=-1 --speedup --circle_all_send --rand_pos
+
+```
 
 
 # AMPL Model

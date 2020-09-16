@@ -65,7 +65,9 @@ tMax = int(get_args_value("tMax", 8))
 
 SPEEDUP = bool(get_args_value("speedup", False, True))
 
-print(f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax} and SPEEDUP={SPEEDUP}\n')
+sT = int(get_args_value("sT", 600))
+
+print(f'Total Number of Nodes is N={N}, with f={f}, honest M={M}, tMax={tMax}, SPEEDUP={SPEEDUP} and solverTime={sT}\n')
 
 # custom data can be loaded here
 
@@ -631,6 +633,21 @@ for (i, v, t) in product(R_OK, V, T - {1}):
             f"{it_name}2({i},{v},{t})",
         )
 
+# Only send if received PrepReq
+for (p, i, v, t) in product(P, R_OK, V, T - {1}):
+    add_var_loop = [
+        (SendPrepRes, "SendPrepResIfYesRecvPrepReq"),
+        (SendPreCommit, "SendPreCommitIfYesRecvPrepReq"),
+        (SendCommit, "SendCommitIfYesRecvPrepReq"),
+    ]
+    for it in add_var_loop:
+        send_var, it_name = it
+        m += (
+            -1 * send_var[p, t, i, v]
+            <= xsum(RecvPrepReq[p, t2, i, j, v] for j in R for t2 in T if t2 >= t),
+            f"{it_name}({p},{i},{v},{t})",
+        )
+
 for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     add_var_loop = [
@@ -766,7 +783,7 @@ time_in_name = get_args_value("time-in-name", default=False, is_bool=True)
 
 drawing_file_name = \
     f"sol" \
-    f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}" \
+    f"_N_{N}_f_{f}_M_{M}_tMax_{tMax}_sT_{sT}" \
     f"_Min_{minimization}_w1_{blocksWeight}_w2_{numberOfRoundsWeight}_w3_{msgsWeight}"
 
 if time_in_name:
@@ -779,7 +796,7 @@ skip_solver = get_args_value("skip-solver", default=False, is_bool=True)
 if not skip_solver:
     # Quit was used to just print the model
     # quit()
-    status = m.optimize(max_seconds=600)
+    status = m.optimize(max_seconds=sT)
 
     m.write(f'{drawing_file_name}.lp')
     with open(f"{drawing_file_name}.out", 'w') as sol_out:
