@@ -506,7 +506,7 @@ for (p, i, v) in product(P, R_OK, V):
         send_var, recv_var, rate, delta, it_name = it
         m += (
             xsum(rate * send_var[p, t, i, v] for t in T - {1})
-            >= xsum(recv_var[p, t, i, j, v] for (t, j) in product(T - {1}, R)) + delta,
+            >= xsum(recv_var[p, t, i, j, v] for t in T - {1} for j in R) + delta,
             f"{it_name}({p},{i},{v})",
         )
 
@@ -580,16 +580,16 @@ for (i, v) in product(R_OK, V - {1}):
 for (p, i, v, t) in product(P, R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     add_var_loop = [
-        (SendPrepReq, SendCV, "noPrepReqIfCV"),
-        (SendPrepRes, SendCV, "noPrepResIfCV"),
-        (SendPreCommit, SendCV, "noPreCommitIfCV"),
-        (SendCommit, SendCV, "noCommitIfCV"),
+        (SendPrepReq, "noPrepReqIfCV"),
+        (SendPrepRes, "noPrepResIfCV"),
+        (SendPreCommit, "noPreCommitIfCV"),
+        (SendCommit, "noCommitIfCV"),
     ]
     for it in add_var_loop:
-        send_var, send_var2, it_name = it
+        send_var, it_name = it
         m += (
             send_var[p, t, i, v]
-            <= 1 - xsum(send_var2[t2, i, v] for t2 in T if 1 < t2 <= t),
+            <= 1 - xsum(SendCV[t2, i, v] for t2 in T if 1 < t2 <= t),
             f"{it_name}({p},{i},{v},{t})",
         )
 
@@ -598,16 +598,16 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
     add_var_loop = [
         # LINKS Commit and LIMITS - analogous as the constrains for SendCV
         # LINKS BlockRelayed and LIMITS - analogous as the constrains for SendCV
-        (SendPrepReq, BlockRelay, "noBlockYesPrepReq"),
-        (SendPrepRes, BlockRelay, "noBlockYesPrepRes"),
-        (SendPreCommit, BlockRelay, "noBlockYesPreCommit"),
-        (SendCommit, BlockRelay, "noBlockYesCommit"),
+        (SendPrepReq, "noBlockYesPrepReq"),
+        (SendPrepRes, "noBlockYesPrepRes"),
+        (SendPreCommit, "noBlockYesPreCommit"),
+        (SendCommit, "noBlockYesCommit"),
     ]
     for it in add_var_loop:
-        send_var, send_var2, it_name = it
+        send_var, it_name = it
         m += (
             send_var[p, t, i, v]
-            <= 1 - xsum(send_var2[p2, t2, i, v] for t2 in T if 1 < t2 <= t for p2 in P),
+            <= 1 - xsum(BlockRelay[p2, t2, i, v] for t2 in T if 1 < t2 <= t for p2 in P),
             f"{it_name}({p},{i},{v},{t})",
         )
 
@@ -615,21 +615,21 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
 for (i, v, t) in product(R_OK, V, T - {1}):
     # LINKS CV AND PrepReq,PrepRes and Commit
     add_var_loop = [
-        (SendPrepReq, SendPrepReq, "noAttackIIPrepReq"),
-        (SendPrepRes, SendPrepRes, "noAttackIIPrepRes"),
-        (SendPreCommit, SendPreCommit, "noAttackIIPreCommit"),
-        (SendCommit, SendCommit, "noAttackIICommit"),
+        (SendPrepReq, "noAttackIIPrepReq"),
+        (SendPrepRes, "noAttackIIPrepRes"),
+        (SendPreCommit, "noAttackIIPreCommit"),
+        (SendCommit, "noAttackIICommit"),
     ]
     for it in add_var_loop:
-        send_var, send_var2, it_name = it
+        send_var, it_name = it
         m += (
             send_var[1, t, i, v]
-            <= 1 - xsum(send_var2[2, t2, i, v] for t2 in T if 1 < t2 <= t),
+            <= 1 - xsum(send_var[2, t2, i, v] for t2 in T if 1 < t2 <= t),
             f"{it_name}1({i},{v},{t})",
         )
         m += (
             send_var[2, t, i, v]
-            <= 1 - xsum(send_var2[1, t2, i, v] for t2 in T if 1 < t2 <= t),
+            <= 1 - xsum(send_var[1, t2, i, v] for t2 in T if 1 < t2 <= t),
             f"{it_name}2({i},{v},{t})",
         )
 
@@ -669,7 +669,7 @@ for (p, i, v) in product(P, R_OK, V - {1}):
     m += (
         Primary[p, i, v]
         <= 1 - xsum(BlockRelay[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
-        "noBlockOldViewsYesPrimary(%s,%s)" % (i, v),
+        "noBlockOldViewsYesPrimary(%s,%s,%s)" % (p,i, v),
     )
     add_var_loop = [
         (SendPrepReq, BlockRelay, "noBlockOldViewsYesPrepReq"),
