@@ -513,7 +513,7 @@ for (p, i, v) in product(P, R_OK, V):
 for (i, v) in product(R_OK, V):
     add_var_loop = [
         (SendPreCommit, 1, RecvPrepResp, 2, -
-        f + 1, "assertSendPreCommitWithinSimLimit1"),
+        (f + 1) + 1, "assertSendPreCommitWithinSimLimit1"),
         (SendPreCommit, 2, RecvPrepResp, 2, - M +
          1, "assertSendPreCommitWithinSimLimit2"),
         (SendCommit, 1, RecvPreCommit, 2, - M +
@@ -685,7 +685,7 @@ for (p, i, v) in product(P, R_OK, V - {1}):
         m += (
             xsum(send_var[p, t, i, v] for t in T - {1})
             <= 1 - xsum(relay_var[p2, t, i, v2] for t in T - {1} for v2 in V if v2 < v for p2 in P),
-            f"{it_name}({i},{v})",
+            f"{it_name}({p}{i},{v})",
         )
 
 for (i, v) in product(R_OK, V - {1}):
