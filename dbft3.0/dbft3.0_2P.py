@@ -496,7 +496,7 @@ for (p, i, v) in product(P, R_OK, V):
     m += (
         xsum(SendPrepReq[p, t, i, v] for t in T - {1})
         >= Primary[p, i, v],
-        "assertSendPrepReqWithinSimLimit(%s,%s)" % (i, v),
+        "assertSendPrepReqWithinSimLimit(%s,%s,%s)" % (p,i, v),
     )
     add_var_loop = [
         (SendPrepRes, RecvPrepReq, 1, 0, "assertSendPrepResWithinSimLimit"),
@@ -513,12 +513,12 @@ for (p, i, v) in product(P, R_OK, V):
 for (i, v) in product(R_OK, V):
     add_var_loop = [
         (SendPreCommit, 1, RecvPrepResp, 2, -
-        f + 1, "assertSendCommitWithinSimLimit1"),
+        f + 1, "assertSendPreCommitWithinSimLimit1"),
         (SendPreCommit, 2, RecvPrepResp, 2, - M +
-         1, "assertSendCommitWithinSimLimit2"),
+         1, "assertSendPreCommitWithinSimLimit2"),
         (SendCommit, 1, RecvPreCommit, 2, - M +
          1, "assertSendCommitWithinSimLimit1"),
-        (SendCommit, 1, RecvPrepResp, 2, - M + 1, "assertSendCommitFastFast1"),
+        (SendCommit, 1, RecvPrepResp, 2, - M + 1, "assertSendCommitWithinSimLimit1SpeedUp"),
         (SendCommit, 2, RecvPreCommit, 2, - M +
          1, "assertSendCommitWithinSimLimit2"),
     ]
@@ -643,8 +643,8 @@ for (p, i, v, t) in product(P, R_OK, V, T - {1}):
     for it in add_var_loop:
         send_var, it_name = it
         m += (
-            -1 * send_var[p, t, i, v]
-            <= xsum(RecvPrepReq[p, t2, i, j, v] for j in R for t2 in T if t2 >= t),
+            send_var[p, t, i, v]
+            <= xsum(RecvPrepReq[p, t2, i, j, v] for j in R for t2 in T if t2 <= t),
             f"{it_name}({p},{i},{v},{t})",
         )
 
@@ -735,11 +735,11 @@ OBJ FUNCTION
 =======================
 """
 if msgsWeight != 0:
-    m += totalNumberSendMsg == xsum(SendPrepReq[p, t, i, v] + SendPrepRes[p, t, i, v] + SendCommit[p, t, i, v] for (
+    m += totalNumberSendMsg == xsum(SendPrepReq[p, t, i, v] + SendPrepRes[p, t, i, v] + SendPreCommit[p, t, i, v] + SendCommit[p, t, i, v] for (
         p, t, i, v) in product(P, T, R, V)) + xsum(
         SendCV[t, i, v] for (t, i, v) in product(T, R, V)), "calcTotalNumberOfSentMsgs"
     m += totalNumberRcvdMsg == xsum(
-        RecvPrepReq[p, t, i, j, v] + RecvPrepResp[p, t, i, j, v] + RecvCommit[p, t, i, j, v] for (
+        RecvPrepReq[p, t, i, j, v] + RecvPrepResp[p, t, i, j, v] + RecvPreCommit[p, t, i, j, v] + RecvCommit[p, t, i, j, v] for (
             p, t, i, j, v) in product(P, T, R, R, V)) + xsum(
         RecvCV[t, i, j, v] for (t, i, j, v) in product(T, R, R, V)), "calcTotalNumberOfRcvdMsgs"
     m += totalNumberMsgs == totalNumberSendMsg + \
