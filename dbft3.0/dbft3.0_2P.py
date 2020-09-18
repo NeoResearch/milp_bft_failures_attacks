@@ -201,6 +201,14 @@ m += xsum(Primary[2, i, 1] for i in R) == 1, "primary2OnlyFirstView"
 m += xsum(Primary[2, i, v]
           for i in R for v in V if v > 1) == 0, "primary20ForOtherViews"
 
+# Primary 1 should be different than primary 2
+for i in R:
+    m += (
+        xsum(Primary[p, i, 1] for p in P)
+        <= 1,
+        f"differentPrimariesOnView1({i})",
+    )
+
 # Ensure circular behavior, if previous Primary not found and conclusions not done we can not move on.
 # Primary should had fault, at least*/
 for v in V - {1}:
