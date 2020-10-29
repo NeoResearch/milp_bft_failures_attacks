@@ -33,3 +33,23 @@ r n4.lp
 o
 w soln4.sol
 ```
+
+## Citation
+
+Cite this in your paper as:
+
+Vitor Nazário Coelho, Rodolfo Pereira Araujo, Haroldo Gambini Santos, Wang Yong Qiang, Igor Machado Coelho (2020). 
+A MILP Model for a Byzantine Fault Tolerant Blockchain Consensus
+Future Internet 2020, 12(11), 185; https://doi.org/10.3390/fi12110185
+
+```bibtex
+@article{optframe2010,
+    author = {Vitor Nazário Coelho and Rodolfo Pereira Araujo and Haroldo Gambini Santos and Wang Yong Qiang and Igor Machado Coelho},
+    year = {2020},
+    month = {10},
+    title = {A MILP Model for a Byzantine Fault Tolerant Blockchain Consensus},
+    journal = "Future Internet",
+    volume = 12,
+    doi = "https://doi.org/10.3390/fi12110185"
+}
+```
